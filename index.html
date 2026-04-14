@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA & iOS Home Screen -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#32d74b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="iForestier" />
+
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-192.png" />
+
+    <!-- SEO -->
+    <title>iForestier — Cubage de Bois</title>
+    <meta name="description" content="Application de cubage de bois, gestion de patrimoine forestier et suivi des cours du marché." />
+
+    <!-- Prevent zoom on input focus (iOS) -->
+    <style>
+      * { -webkit-tap-highlight-color: transparent; }
+      input, select, textarea { font-size: 16px !important; }
+      body { margin: 0; background: #000; overscroll-behavior: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
