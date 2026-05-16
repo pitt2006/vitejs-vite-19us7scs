@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /* ═══════════════════════════════════════════════════════
    SUPABASE CONFIG — replace with your own credentials
@@ -242,12 +242,12 @@ function TOSModal({ onClose, onAccept }) {
 }
 
 function WelcomeScreen({ onSave }) {
-  const [country, setCountry] = useState(""); // "FR" | "CA"
+  const [country, setCountry] = useState("");
   const [domain, setDomain] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [photo, setPhoto] = useState(null);
-  const [step, setStep] = useState(0); // 0=country, 1=domain, 2=identity, 3=photo+CGU
+  const [step, setStep] = useState(0); // 0=pays 1=domaine 2=identite 3=photo+CGU
   const [accepted, setAccepted] = useState(false);
   const [showTOS, setShowTOS] = useState(false);
   const COUNTRIES = [
@@ -286,11 +286,12 @@ function WelcomeScreen({ onSave }) {
     onSave(p);
   };
 
+
   const SF = "'SF Pro Display',-apple-system,sans-serif";
 
   return (
     <div style={{ position:"fixed",inset:0,zIndex:400,backgroundImage:`url(${BG})`,backgroundSize:"cover",backgroundPosition:"center",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px",overflowY:"auto" }}>
-      <div style={{ position:"absolute",inset:0,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(10px)" }}/>
+      <div style={{ position:"absolute",inset:0,background:"rgba(0,0,0,0.78)",backdropFilter:"blur(10px)" }}/>
       <div style={{ position:"relative",zIndex:1,width:"100%",maxWidth:390,display:"flex",flexDirection:"column",gap:20,padding:"40px 0" }}>
 
         {/* Brand */}
@@ -305,14 +306,14 @@ function WelcomeScreen({ onSave }) {
         <div style={{ display:"flex",gap:6,justifyContent:"center" }}>
           {[0,1,2,3].map(i=>(
             <div key={i} style={{
-              width: step===i ? 20 : 6, height:6,borderRadius:3,
+              width: step===i ? 20 : 6, height:6, borderRadius:3,
               background: step===i ? C.green : (step>i ? "rgba(50,215,75,0.4)" : "rgba(255,255,255,0.15)"),
               transition:"all .25s",
             }}/>
           ))}
         </div>
 
-        {/* Step 0 — Pays */}
+        {/* ── STEP 0 — Pays ── */}
         {step===0&&(
           <div style={{ display:"flex",flexDirection:"column",gap:16,animation:"slideUp .35s ease" }}>
             <div style={{ textAlign:"center" }}>
@@ -320,154 +321,130 @@ function WelcomeScreen({ onSave }) {
               <div style={{ fontFamily:SF,fontSize:13,color:C.label }}>Adapte les essences et les régions forestières</div>
             </div>
             <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-              {COUNTRIES.map(c=>(
-                <button key={c.id} onClick={()=>setCountry(c.id)} style={{
-                  display:"flex",alignItems:"center",gap:16,padding:"18px 20px",
-                  borderRadius:16,border:`2px solid ${country===c.id?"rgba(50,215,75,0.6)":"rgba(255,255,255,0.1)"}`,
-                  background:country===c.id?"rgba(50,215,75,0.1)":"rgba(255,255,255,0.04)",
-                  cursor:"pointer",transition:"all .15s",textAlign:"left",
-                }}>
-                  <span style={{ fontSize:40 }}>{c.flag}</span>
-                  <div>
-                    <div style={{ fontFamily:SF,fontSize:18,fontWeight:700,color:"#fff" }}>{c.label}</div>
-                    <div style={{ fontFamily:SF,fontSize:13,color:C.label,marginTop:2 }}>{c.sub}</div>
-                  </div>
-                  {country===c.id&&<span style={{ marginLeft:"auto",color:C.green,fontSize:20 }}>✓</span>}
-                </button>
-              ))}
+              {/* France */}
+              <button onClick={()=>setCountry("FR")} style={{
+                display:"flex",alignItems:"center",gap:16,padding:"18px 20px",
+                borderRadius:16,border:`2px solid ${country==="FR"?"rgba(50,215,75,0.6)":"rgba(255,255,255,0.1)"}`,
+                background:country==="FR"?"rgba(50,215,75,0.1)":"rgba(255,255,255,0.04)",
+                cursor:"pointer",transition:"all .15s",textAlign:"left",width:"100%",
+              }}>
+<span style={{ fontSize:52,flexShrink:0 }}>🇫🇷</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontFamily:SF,fontSize:18,fontWeight:700,color:"#fff" }}>France</div>
+                  <div style={{ fontFamily:SF,fontSize:13,color:C.label,marginTop:2 }}>Français</div>
+                </div>
+                {country==="FR"&&<span style={{ color:C.green,fontSize:22 }}>✓</span>}
+              </button>
+
+              {/* Canada */}
+              <button onClick={()=>setCountry("CA")} style={{
+                display:"flex",alignItems:"center",gap:16,padding:"18px 20px",
+                borderRadius:16,border:`2px solid ${country==="CA"?"rgba(50,215,75,0.6)":"rgba(255,255,255,0.1)"}`,
+                background:country==="CA"?"rgba(50,215,75,0.1)":"rgba(255,255,255,0.04)",
+                cursor:"pointer",transition:"all .15s",textAlign:"left",width:"100%",
+              }}>
+<span style={{ fontSize:52,flexShrink:0 }}>🇨🇦</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontFamily:SF,fontSize:18,fontWeight:700,color:"#fff" }}>Canada</div>
+                  <div style={{ fontFamily:SF,fontSize:13,color:C.label,marginTop:2 }}>Français (Québec)</div>
+                </div>
+                {country==="CA"&&<span style={{ color:C.green,fontSize:22 }}>✓</span>}
+              </button>
             </div>
             <button onClick={()=>country&&setStep(1)} style={{
               width:"100%",padding:"16px",borderRadius:14,border:"none",
               background:country?C.green:"rgba(255,255,255,0.08)",
               color:country?"#000":"rgba(255,255,255,0.3)",
-              fontFamily:SF,fontSize:17,fontWeight:600,cursor:country?"pointer":"default",
+              fontFamily:SF,fontSize:17,fontWeight:600,
+              cursor:country?"pointer":"default",
             }}>Continuer →</button>
           </div>
         )}
 
-        {/* Step 1 — Domaine */}
+        {/* ── STEP 1 — Domaine ── */}
         {step===1&&(
           <div style={{ display:"flex",flexDirection:"column",gap:16,animation:"slideUp .35s ease" }}>
             <div style={{ fontFamily:SF,fontSize:20,fontWeight:600,color:"#fff",textAlign:"center" }}>Votre domaine forestier</div>
-            <IOSInput autoFocus value={domain} onChange={setDomain} placeholder="Domain name"/>
-            <button onClick={()=>domain.trim()&&setStep(1)} style={{
-              width:"100%",padding:"16px",borderRadius:14,border:"none",
-              background:domain.trim()?C.green:"rgba(50,215,75,0.2)",
-              color:domain.trim()?"#000":"rgba(255,255,255,0.25)",
-              fontFamily:SF,fontSize:17,fontWeight:600,
-              cursor:domain.trim()?"pointer":"default",transition:"all .2s",
-            }}>Continuer →</button>
-          </div>
-        )}
-
-        {/* Step 1 — Identité */}
-        {step===1&&(
-          <div style={{ display:"flex",flexDirection:"column",gap:16,animation:"slideUp .35s ease" }}>
-            <div style={{ fontFamily:SF,fontSize:20,fontWeight:600,color:"#fff",textAlign:"center" }}>Votre identité</div>
-            <div style={{ ...card({borderRadius:14}),overflow:"hidden" }}>
-              <div style={{ borderBottom:`1px solid ${C.cardBorder}` }}>
-                <input autoFocus value={firstName} onChange={e=>setFirstName(e.target.value)} placeholder="Prénom"
-                  style={{ width:"100%",background:"transparent",border:"none",padding:"14px 16px",color:"#fff",fontFamily:SF,fontSize:17,outline:"none",display:"block" }}/>
-              </div>
-              <input value={lastName} onChange={e=>setLastName(e.target.value)} placeholder="Nom"
-                style={{ width:"100%",background:"transparent",border:"none",padding:"14px 16px",color:"#fff",fontFamily:SF,fontSize:17,outline:"none",display:"block" }}/>
-            </div>
+            <IOSInput autoFocus value={domain} onChange={setDomain} placeholder={"ex : Forêt de la Brenne"}/>
             <div style={{ display:"flex",gap:10 }}>
               <button onClick={()=>setStep(0)} style={{ flex:1,padding:"15px",borderRadius:14,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontFamily:SF,fontSize:17,cursor:"pointer" }}>←</button>
               <button onClick={()=>setStep(2)} style={{
                 flex:3,padding:"15px",borderRadius:14,border:"none",
-                background:(firstName.trim()||lastName.trim())?C.green:"rgba(50,215,75,0.2)",
-                color:(firstName.trim()||lastName.trim())?"#000":"rgba(255,255,255,0.25)",
-                fontFamily:SF,fontSize:17,fontWeight:600,
-                cursor:(firstName.trim()||lastName.trim())?"pointer":"default",transition:"all .2s",
+                background:C.green,color:"#000",fontFamily:SF,fontSize:17,fontWeight:600,cursor:"pointer",
               }}>Continuer →</button>
             </div>
           </div>
         )}
 
-        {/* Step 3 — Photo de profil */}
-        {step===3&&(
-          <div style={{ display:"flex",flexDirection:"column",gap:16,animation:"slideUp .35s ease",alignItems:"center" }}>
-            <div style={{ fontFamily:SF,fontSize:20,fontWeight:600,color:"#fff",textAlign:"center" }}>Photo de profil</div>
-            <div style={{ fontFamily:SF,fontSize:14,color:C.label,textAlign:"center",lineHeight:1.5 }}>
-              Optionnel — ajoutez une photo pour personnaliser votre profil
-            </div>
-
-            {/* Photo preview / upload zone */}
-            <label htmlFor="photo-input" style={{ cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:0 }}>
-              <div style={{
-                width:120,height:120,borderRadius:"50%",
-                background: photo ? "transparent" : "rgba(255,255,255,0.08)",
-                border: photo ? "3px solid rgba(50,215,75,0.6)" : "2px dashed rgba(255,255,255,0.25)",
-                display:"flex",alignItems:"center",justifyContent:"center",
-                overflow:"hidden",position:"relative",
-                transition:"border .2s",
-              }}>
-                {photo
-                  ? <img src={photo} alt="profil" style={{ width:"100%",height:"100%",objectFit:"cover" }}/>
-                  : <div style={{ textAlign:"center" }}>
-                      <div style={{ fontSize:36,marginBottom:6 }}>📷</div>
-                      <div style={{ fontFamily:SF,fontSize:11,color:C.label }}>Ajouter</div>
-                    </div>
-                }
-              </div>
-              {photo&&(
-                <div style={{ fontFamily:SF,fontSize:12,color:C.green,marginTop:10,fontWeight:500 }}>
-                  ✓ Photo sélectionnée — appuyez pour changer
-                </div>
-              )}
-            </label>
-            <input id="photo-input" type="file" accept="image/*" onChange={handlePhoto}
-              style={{ display:"none" }}/>
-
-            {/* Terms checkbox */}
-
-              {/* CGU obligatoire */}
-              <div style={{ display:"flex",gap:12,alignItems:"flex-start",padding:"14px 16px",background:"rgba(255,255,255,0.05)",borderRadius:12,border:`1px solid ${accepted?"rgba(50,215,75,0.3)":"rgba(255,255,255,0.1)"}`,transition:"border .2s" }}>
-                <div onClick={()=>setAccepted(v=>!v)} style={{
-                  width:24,height:24,borderRadius:6,flexShrink:0,marginTop:1,
-                  background:accepted?C.green:"transparent",
-                  border:`2px solid ${accepted?C.green:"rgba(255,255,255,0.3)"}`,
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  cursor:"pointer",transition:"all .2s",
-                }}>
-                  {accepted && <span style={{ color:"#000",fontSize:14,fontWeight:700,lineHeight:1 }}>OK</span>}
-                </div>
-                <div style={{ fontFamily:SF,fontSize:13,color:"rgba(255,255,255,0.65)",lineHeight:1.5 }}>
-                  <span style={{ color:"rgba(255,69,58,0.9)",fontSize:10,fontWeight:700,marginRight:5 }}>REQUIS</span>
-                  {"J'accepte les "}
-                  <span onClick={()=>setShowTOS(true)} style={{ color:C.green,textDecoration:"underline",cursor:"pointer",fontWeight:600 }}>
-                    {"Conditions Generales d'Utilisation"}
-                  </span>
-                  {" et le stockage de mes donnees par le fournisseur."}
-                </div>
-              </div>
-
-
-
-            <div style={{ display:"flex",gap:10,width:"100%" }}>
+        {/* ── STEP 2 — Identité ── */}
+        {step===2&&(
+          <div style={{ display:"flex",flexDirection:"column",gap:16,animation:"slideUp .35s ease" }}>
+            <div style={{ fontFamily:SF,fontSize:20,fontWeight:600,color:"#fff",textAlign:"center" }}>Votre identité</div>
+            <IOSInput value={firstName} onChange={setFirstName} placeholder={"Prénom"}/>
+            <IOSInput value={lastName} onChange={setLastName} placeholder={"Nom"}/>
+            <div style={{ display:"flex",gap:10 }}>
               <button onClick={()=>setStep(1)} style={{ flex:1,padding:"15px",borderRadius:14,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontFamily:SF,fontSize:17,cursor:"pointer" }}>←</button>
-              <button onClick={()=>accepted&&handleSave()} style={{
+              <button onClick={()=>setStep(3)} style={{
                 flex:3,padding:"15px",borderRadius:14,border:"none",
-                background:accepted?C.green:"rgba(50,215,75,0.15)",
-                color:accepted?"#000":"rgba(255,255,255,0.2)",
-                fontFamily:SF,fontSize:17,fontWeight:700,
-                cursor:accepted?"pointer":"default",transition:"all .2s",
-              }}>{photo?"Commencer OK":"Passer & Commencer"}</button>
+                background:C.green,color:"#000",fontFamily:SF,fontSize:17,fontWeight:600,cursor:"pointer",
+              }}>Continuer →</button>
             </div>
           </div>
         )}
 
-        {/* TOS Modal */}
-        {showTOS && <TOSModal onClose={()=>setShowTOS(false)} onAccept={()=>{setAccepted(true);setShowTOS(false);}}/>}
+        {/* ── STEP 3 — Photo + CGU ── */}
+        {step===3&&(
+          <div style={{ display:"flex",flexDirection:"column",gap:16,animation:"slideUp .35s ease",alignItems:"center" }}>
+            <div style={{ fontFamily:SF,fontSize:20,fontWeight:600,color:"#fff",textAlign:"center" }}>Photo de profil</div>
+            <div style={{ fontFamily:SF,fontSize:14,color:C.label,textAlign:"center",lineHeight:1.5 }}>
+              Optionnel — ajoute une photo pour personnaliser ton profil
+            </div>
+            <label style={{ cursor:"pointer" }}>
+              {photo
+                ? <img src={photo} alt="profil" style={{ width:120,height:120,borderRadius:"50%",objectFit:"cover",border:"3px solid rgba(50,215,75,0.5)" }}/>
+                : <div style={{ width:120,height:120,borderRadius:"50%",background:"rgba(50,215,75,0.12)",border:"2px dashed rgba(50,215,75,0.4)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6 }}>
+                    <span style={{ fontSize:32 }}>📷</span>
+                    <span style={{ fontFamily:SF,fontSize:11,color:C.label }}>Ajouter</span>
+                  </div>
+              }
+              <input type="file" accept="image/*" onChange={handlePhoto} style={{ display:"none" }}/>
+            </label>
+            {/* CGU */}
+            {showTOS&&<TOSModal onAccept={()=>{setAccepted(true);setShowTOS(false);}} onClose={()=>setShowTOS(false)}/>}
+            {/* Terms checkbox */}
+            <div style={{ display:"flex",gap:12,alignItems:"flex-start",padding:"14px 16px",background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${accepted?"rgba(50,215,75,0.3)":"rgba(255,255,255,0.07)"}`,width:"100%",boxSizing:"border-box",transition:"border .2s" }}>
+              <div onClick={()=>accepted?setAccepted(false):setShowTOS(true)} style={{
+                width:24,height:24,borderRadius:6,flexShrink:0,marginTop:1,
+                background:accepted?"rgba(50,215,75,0.8)":"transparent",
+                border:`2px solid ${accepted?"rgba(50,215,75,0.8)":"rgba(255,255,255,0.2)"}`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                cursor:"pointer",transition:"all .2s",
+              }}>
+                {accepted&&<span style={{ color:"#000",fontSize:14,fontWeight:700,lineHeight:1 }}>OK</span>}
+              </div>
+              <div style={{ fontFamily:SF,fontSize:13,color:"rgba(255,255,255,0.6)",lineHeight:1.5 }}>
+                {"J'ai lu et j'accepte les "}
+                <span onClick={()=>setShowTOS(true)} style={{ color:C.green,cursor:"pointer",textDecoration:"underline" }}>Conditions Générales d'Utilisation</span>
+              </div>
+            </div>
+            <div style={{ display:"flex",gap:10,width:"100%" }}>
+              <button onClick={()=>setStep(2)} style={{ flex:1,padding:"15px",borderRadius:14,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontFamily:SF,fontSize:17,cursor:"pointer" }}>←</button>
+              <button onClick={handleSave} disabled={!accepted} style={{
+                flex:3,padding:"16px",borderRadius:14,border:"none",
+                background:accepted?C.green:"rgba(255,255,255,0.08)",
+                color:accepted?"#000":"rgba(255,255,255,0.3)",
+                fontFamily:SF,fontSize:17,fontWeight:700,
+                cursor:accepted?"pointer":"default",
+              }}>Commencer 🌲</button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════
-   NAMING SCREEN
-═══════════════════════════════════════ */
 function NamingScreen({ index, country, onConfirm, onCancel }) {
   const [name, setName] = useState("");
   const essences = getEssenceList(country||"FR");
@@ -2566,17 +2543,26 @@ function SettingsScreen({ profile, onSave, onReset, onClose }) {
           <div style={{ marginBottom:4 }}>
             <div style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8 }}>Pays</div>
             <div style={{ display:"flex",gap:8 }}>
-              {COUNTRIES.map(c=>(
-                <button key={c.id} onClick={()=>setCountry(c.id)} style={{
-                  flex:1,padding:"12px 8px",borderRadius:12,
-                  border:`1px solid ${country===c.id?"rgba(50,215,75,0.5)":"rgba(255,255,255,0.1)"}`,
-                  background:country===c.id?"rgba(50,215,75,0.1)":"rgba(255,255,255,0.04)",
-                  cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,
-                }}>
-                  <span style={{ fontSize:22 }}>{c.flag}</span>
-                  <span style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:country===c.id?C.green:"rgba(255,255,255,0.6)" }}>{c.label}</span>
-                </button>
-              ))}
+              {/* FR */}
+              <button onClick={()=>setCountry("FR")} style={{
+                flex:1,padding:"12px 8px",borderRadius:12,
+                border:`1px solid ${country==="FR"?"rgba(50,215,75,0.5)":"rgba(255,255,255,0.1)"}`,
+                background:country==="FR"?"rgba(50,215,75,0.1)":"rgba(255,255,255,0.04)",
+                cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,
+              }}>
+<span style={{ fontSize:36 }}>🇫🇷</span>
+                <span style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:country==="FR"?C.green:"rgba(255,255,255,0.6)" }}>France</span>
+              </button>
+              {/* CA */}
+              <button onClick={()=>setCountry("CA")} style={{
+                flex:1,padding:"12px 8px",borderRadius:12,
+                border:`1px solid ${country==="CA"?"rgba(50,215,75,0.5)":"rgba(255,255,255,0.1)"}`,
+                background:country==="CA"?"rgba(50,215,75,0.1)":"rgba(255,255,255,0.04)",
+                cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,
+              }}>
+<span style={{ fontSize:36 }}>🇨🇦</span>
+                <span style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:country==="CA"?C.green:"rgba(255,255,255,0.6)" }}>Canada</span>
+              </button>
             </div>
           </div>
         </div>
@@ -2612,6 +2598,154 @@ function SettingsScreen({ profile, onSave, onReset, onClose }) {
         </div>
 
       </div>
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════
+   MAP VIEW — Leaflet OpenStreetMap
+   Chargement dynamique via CDN, aucune clé API requise
+═══════════════════════════════════════ */
+function MapView({ trees }) {
+  const SF = "'SF Pro Display',-apple-system,sans-serif";
+  const mapRef = useRef(null);
+  const leafletMapRef = useRef(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  const geoTrees = trees.filter(t => t.geo && t.geo.lat && t.geo.lng);
+
+  useEffect(() => {
+    if (collapsed || geoTrees.length === 0) return;
+
+    // Load Leaflet CSS
+    if (!document.getElementById("leaflet-css")) {
+      const link = document.createElement("link");
+      link.id = "leaflet-css";
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      document.head.appendChild(link);
+    }
+
+    const initMap = () => {
+      if (!mapRef.current || leafletMapRef.current) return;
+      const L = window.L;
+      if (!L) return;
+
+      const center = [geoTrees[0].geo.lat, geoTrees[0].geo.lng];
+      const map = L.map(mapRef.current, { zoomControl: true, attributionControl: false });
+      leafletMapRef.current = map;
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18,
+      }).addTo(map);
+
+      // Custom green marker
+      const greenIcon = L.divIcon({
+        className: "",
+        html: `<div style="
+          width:32px;height:32px;
+          background:linear-gradient(135deg,#32d74b,#22a83b);
+          border-radius:50% 50% 50% 0;
+          transform:rotate(-45deg);
+          border:2px solid #fff;
+          box-shadow:0 2px 8px rgba(0,0,0,0.4);
+        "></div>`,
+        iconSize: [32,32],
+        iconAnchor: [16,32],
+        popupAnchor: [0,-36],
+      });
+
+      const bounds = [];
+      geoTrees.forEach(tree => {
+        const vol = tree.logs.reduce((s,l) => s+l.v, 0);
+        const ess = ESSENCE_LIST.find(e=>e.id===tree.essence) || ESSENCE_LIST[ESSENCE_LIST.length-1];
+        const marker = L.marker([tree.geo.lat, tree.geo.lng], { icon: greenIcon });
+        marker.bindPopup(`
+          <div style="font-family:-apple-system,sans-serif;min-width:140px;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${ess.icon} ${tree.name}</div>
+            <div style="font-size:12px;color:#555;">${ess.label}</div>
+            <div style="font-size:13px;font-weight:600;color:#22a83b;margin-top:4px;">${vol.toFixed(2)} m³</div>
+            <div style="font-size:10px;color:#999;margin-top:2px;">±${tree.geo.accuracy||"?"}m</div>
+          </div>
+        `);
+        marker.addTo(map);
+        bounds.push([tree.geo.lat, tree.geo.lng]);
+      });
+
+      if (bounds.length === 1) {
+        map.setView(bounds[0], 14);
+      } else {
+        map.fitBounds(bounds, { padding: [30,30] });
+      }
+
+      setTimeout(() => map.invalidateSize(), 200);
+      setMapReady(true);
+    };
+
+    if (window.L) {
+      initMap();
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      script.onload = initMap;
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
+  }, [collapsed, geoTrees.length]);
+
+  if (geoTrees.length === 0) return null;
+
+  return (
+    <div style={{
+      background:"rgba(28,28,30,0.88)",border:"1px solid rgba(50,215,75,0.2)",
+      borderRadius:16,overflow:"hidden",marginBottom:12,
+    }}>
+      {/* Header */}
+      <div
+        onClick={()=>{
+          if (!collapsed && leafletMapRef.current) {
+            leafletMapRef.current.remove();
+            leafletMapRef.current = null;
+          }
+          setCollapsed(v=>!v);
+          setMapReady(false);
+        }}
+        style={{ display:"flex",alignItems:"center",gap:10,padding:"12px 16px",cursor:"pointer" }}
+      >
+        <span style={{ fontSize:18 }}>🗺</span>
+        <div style={{ flex:1 }}>
+          <div style={{ fontFamily:SF,fontSize:14,fontWeight:600,color:"#fff" }}>Carte des parcelles</div>
+          <div style={{ fontFamily:SF,fontSize:12,color:"rgba(50,215,75,0.7)",marginTop:1 }}>
+            {geoTrees.length} parcelle{geoTrees.length>1?"s":""} géolocalisée{geoTrees.length>1?"s":""}
+          </div>
+        </div>
+        <span style={{ color:"rgba(255,255,255,0.4)",fontSize:13,transition:"transform .2s",
+          display:"inline-block",transform:collapsed?"rotate(0deg)":"rotate(180deg)" }}>▲</span>
+      </div>
+
+      {/* Map container */}
+      {!collapsed && (
+        <div style={{ position:"relative" }}>
+          <div ref={mapRef} style={{ width:"100%",height:240 }}/>
+          {!mapReady && (
+            <div style={{
+              position:"absolute",inset:0,background:"rgba(0,0,0,0.6)",
+              display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,
+            }}>
+              <div style={{ fontSize:24 }}>🌍</div>
+              <div style={{ fontFamily:SF,fontSize:13,color:"rgba(255,255,255,0.6)" }}>Chargement de la carte...</div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -2765,6 +2899,9 @@ forestier</span>
               <span style={{ fontFamily:"'SF Pro Display',-apple-system,sans-serif",fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.55)" }}>Historique</span>
             </button>
           </div>
+
+          {/* Map */}
+          <MapView trees={trees}/>
 
           {/* Trees list */}
           {trees.length > 0 && (
