@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 
-const SUPABASE_URL = "https://gfdmqupnwkgjifukztrg.supabase.co"; // e.g. "https://gfdmqupnwkgjifukztrg.supabase.co"
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmZG1xdXBud2tnamlmdWt6dHJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTk5NzcsImV4cCI6MjA5MTczNTk3N30.noh6RQ_B8xHKjlwHxZ6_6rxXpwwXkxD6NKIcbJ5lt-k"; // your anon public key
+/* ═══════════════════════════════════════════════════════
+   SUPABASE CONFIG — replace with your own credentials
+   1. Go to https://supabase.com → New project
+   2. Settings → API → copy "Project URL" and "anon public" key
+   3. Run the SQL setup in your Supabase SQL editor (see README)
+═══════════════════════════════════════════════════════ */
+const SUPABASE_URL = ""; // e.g. "https://xxxx.supabase.co"
+const SUPABASE_KEY = ""; // your anon public key
 
 /* ── Supabase sync helper ── */
 const sb = {
@@ -236,13 +242,18 @@ function TOSModal({ onClose, onAccept }) {
 }
 
 function WelcomeScreen({ onSave }) {
+  const [country, setCountry] = useState(""); // "FR" | "CA"
   const [domain, setDomain] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [photo, setPhoto] = useState(null); // base64 data URI
-  const [step, setStep] = useState(0);
+  const [photo, setPhoto] = useState(null);
+  const [step, setStep] = useState(0); // 0=country, 1=domain, 2=identity, 3=photo+CGU
   const [accepted, setAccepted] = useState(false);
   const [showTOS, setShowTOS] = useState(false);
+  const COUNTRIES = [
+    { id:"FR", flag:"🇫🇷", label:"France", sub:"Français" },
+    { id:"CA", flag:"🇨🇦", label:"Canada", sub:"Français (Québec)" },
+  ];
 
   const handlePhoto = (e) => {
     const file = e.target.files?.[0];
@@ -254,6 +265,7 @@ function WelcomeScreen({ onSave }) {
 
   const handleSave = async () => {
     const p = {
+      country: country || "FR",
       domain: domain.trim() || "iForestier",
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -291,7 +303,7 @@ function WelcomeScreen({ onSave }) {
 
         {/* Step indicator */}
         <div style={{ display:"flex",gap:6,justifyContent:"center" }}>
-          {[0,1,2].map(i=>(
+          {[0,1,2,3].map(i=>(
             <div key={i} style={{
               width: step===i ? 20 : 6, height:6,borderRadius:3,
               background: step===i ? C.green : (step>i ? "rgba(50,215,75,0.4)" : "rgba(255,255,255,0.15)"),
@@ -300,8 +312,41 @@ function WelcomeScreen({ onSave }) {
           ))}
         </div>
 
-        {/* Step 0 — Domaine */}
+        {/* Step 0 — Pays */}
         {step===0&&(
+          <div style={{ display:"flex",flexDirection:"column",gap:16,animation:"slideUp .35s ease" }}>
+            <div style={{ textAlign:"center" }}>
+              <div style={{ fontFamily:SF,fontSize:17,fontWeight:700,color:"#fff",marginBottom:6 }}>Choisissez votre pays</div>
+              <div style={{ fontFamily:SF,fontSize:13,color:C.label }}>Adapte les essences et les régions forestières</div>
+            </div>
+            <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
+              {COUNTRIES.map(c=>(
+                <button key={c.id} onClick={()=>setCountry(c.id)} style={{
+                  display:"flex",alignItems:"center",gap:16,padding:"18px 20px",
+                  borderRadius:16,border:`2px solid ${country===c.id?"rgba(50,215,75,0.6)":"rgba(255,255,255,0.1)"}`,
+                  background:country===c.id?"rgba(50,215,75,0.1)":"rgba(255,255,255,0.04)",
+                  cursor:"pointer",transition:"all .15s",textAlign:"left",
+                }}>
+                  <span style={{ fontSize:40 }}>{c.flag}</span>
+                  <div>
+                    <div style={{ fontFamily:SF,fontSize:18,fontWeight:700,color:"#fff" }}>{c.label}</div>
+                    <div style={{ fontFamily:SF,fontSize:13,color:C.label,marginTop:2 }}>{c.sub}</div>
+                  </div>
+                  {country===c.id&&<span style={{ marginLeft:"auto",color:C.green,fontSize:20 }}>✓</span>}
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>country&&setStep(1)} style={{
+              width:"100%",padding:"16px",borderRadius:14,border:"none",
+              background:country?C.green:"rgba(255,255,255,0.08)",
+              color:country?"#000":"rgba(255,255,255,0.3)",
+              fontFamily:SF,fontSize:17,fontWeight:600,cursor:country?"pointer":"default",
+            }}>Continuer →</button>
+          </div>
+        )}
+
+        {/* Step 1 — Domaine */}
+        {step===1&&(
           <div style={{ display:"flex",flexDirection:"column",gap:16,animation:"slideUp .35s ease" }}>
             <div style={{ fontFamily:SF,fontSize:20,fontWeight:600,color:"#fff",textAlign:"center" }}>Votre domaine forestier</div>
             <IOSInput autoFocus value={domain} onChange={setDomain} placeholder="Domain name"/>
@@ -340,8 +385,8 @@ function WelcomeScreen({ onSave }) {
           </div>
         )}
 
-        {/* Step 2 — Photo de profil */}
-        {step===2&&(
+        {/* Step 3 — Photo de profil */}
+        {step===3&&(
           <div style={{ display:"flex",flexDirection:"column",gap:16,animation:"slideUp .35s ease",alignItems:"center" }}>
             <div style={{ fontFamily:SF,fontSize:20,fontWeight:600,color:"#fff",textAlign:"center" }}>Photo de profil</div>
             <div style={{ fontFamily:SF,fontSize:14,color:C.label,textAlign:"center",lineHeight:1.5 }}>
@@ -423,9 +468,10 @@ function WelcomeScreen({ onSave }) {
 /* ═══════════════════════════════════════
    NAMING SCREEN
 ═══════════════════════════════════════ */
-function NamingScreen({ index, onConfirm, onCancel }) {
+function NamingScreen({ index, country, onConfirm, onCancel }) {
   const [name, setName] = useState("");
-  const [essence, setEssence] = useState("chene_qual");
+  const essences = getEssenceList(country||"FR");
+  const [essence, setEssence] = useState(essences[0]?.id || "chene_qual");
   const [geo, setGeo] = useState(null); // {lat, lng, accuracy}
   const [geoStatus, setGeoStatus] = useState("idle"); // idle|loading|ok|error
   const SF = "'SF Pro Display',-apple-system,sans-serif";
@@ -461,7 +507,7 @@ function NamingScreen({ index, onConfirm, onCancel }) {
             Essence principale
           </div>
           <div style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:6 }}>
-            {ESSENCE_LIST.map(e=>(
+            {getEssenceList(country||"FR").map(e=>(
               <button key={e.id} onClick={()=>setEssence(e.id)} style={{
                 display:"flex",alignItems:"center",gap:8,padding:"10px 12px",
                 borderRadius:10,border:`1px solid ${essence===e.id?"rgba(50,215,75,0.45)":"rgba(255,255,255,0.07)"}`,
@@ -1163,38 +1209,49 @@ function ReportScreen({ trees, price, setPrice, profile, onClose }) {
 // Taux en cm/an de diamètre (valeurs médianes station favorable)
 // Régions sylvicoles françaises basées sur découpage CNPF / IFN
 
-const REGIONS = [
-  { id:"nord_ouest",   label:"Normandie / Bretagne",       icon:"🌧",
-    note:"Sol profond, pluviosité élevée -- excellent pour feuillus",
-    coeff:{ chene:1.10, hetre:1.15, pin:0.85, douglas:1.20, epicea:0.90, peuplier:1.40, meleze:0.80, chataignier:1.10 } },
-  { id:"idf_centre",   label:"Île-de-France / Centre",     icon:"🌾",
-    note:"Plaine argilo-calcaire -- bon équilibre feuillus/résineux",
-    coeff:{ chene:1.00, hetre:1.00, pin:1.00, douglas:1.00, epicea:0.95, peuplier:1.10, meleze:0.85, chataignier:0.95 } },
-  { id:"nord_est",     label:"Alsace / Lorraine / Vosges", icon:"⛰",
-    note:"Sols vosgiens, influence continentale -- résineux favorisés",
-    coeff:{ chene:0.90, hetre:1.05, pin:1.10, douglas:1.05, epicea:1.25, peuplier:0.85, meleze:1.10, chataignier:0.80 } },
-  { id:"sud_ouest",    label:"Aquitaine / Landes",         icon:"🌲",
-    note:"Sables landais, douceur atlantique -- pin maritime & douglas excellents",
-    coeff:{ chene:0.95, hetre:0.85, pin:1.40, douglas:1.35, epicea:0.75, peuplier:1.20, meleze:0.70, chataignier:1.05 } },
-  { id:"massif_central",label:"Massif Central / Auvergne", icon:"🏔",
-    note:"Altitude 600-1200m, sols volcaniques -- douglas très productif",
-    coeff:{ chene:0.85, hetre:0.95, pin:1.05, douglas:1.30, epicea:1.10, peuplier:0.70, meleze:0.95, chataignier:0.90 } },
-  { id:"alpes_jura",   label:"Alpes / Jura / Franche-Comté",icon:"🗻",
-    note:"Sols calcaires à altitude, rigueur climatique -- croissance ralentie mais bois dense",
-    coeff:{ chene:0.80, hetre:0.90, pin:0.95, douglas:1.10, epicea:1.05, peuplier:0.65, meleze:1.20, chataignier:0.70 } },
-  { id:"bourgogne",    label:"Bourgogne / Morvan",         icon:"🍷",
-    note:"Forêts mixtes, sols argilo-calcaires -- chêne de qualité exceptionnelle",
-    coeff:{ chene:1.05, hetre:1.00, pin:0.90, douglas:1.15, epicea:0.90, peuplier:1.00, meleze:0.85, chataignier:1.00 } },
-  { id:"mediterranee", label:"Méditerranée / PACA",        icon:"☀️",
-    note:"Sécheresse estivale -- croissance limitée, bois dense et résistant",
-    coeff:{ chene:0.70, hetre:0.75, pin:0.85, douglas:0.80, epicea:0.65, peuplier:0.90, meleze:0.85, chataignier:0.85 } },
-  { id:"pyrenees",     label:"Pyrénées / Occitanie",       icon:"🏕",
-    note:"Gradient altitudinal, façade atlantique -- hêtre dominant",
-    coeff:{ chene:0.90, hetre:1.10, pin:1.05, douglas:1.10, epicea:0.95, peuplier:0.95, meleze:0.95, chataignier:1.00 } },
-];
+const REGIONS_BY_COUNTRY = {
+  FR: [
+    { id:"nord_ouest",    label:"Normandie / Bretagne",       icon:"🌧", note:"Sol profond, pluviosité élevée — excellent pour feuillus",
+      coeff:{ chene:1.10, hetre:1.15, pin:0.85, douglas:1.20, epicea:0.90, peuplier:1.40, meleze:0.80, chataignier:1.10 } },
+    { id:"idf_centre",    label:"Île-de-France / Centre",     icon:"🌾", note:"Plaine argilo-calcaire — bon équilibre feuillus/résineux",
+      coeff:{ chene:1.00, hetre:1.00, pin:1.00, douglas:1.00, epicea:0.95, peuplier:1.10, meleze:0.85, chataignier:0.95 } },
+    { id:"nord_est",      label:"Alsace / Lorraine / Vosges", icon:"⛰", note:"Sols vosgiens, influence continentale — résineux favorisés",
+      coeff:{ chene:0.90, hetre:1.05, pin:1.10, douglas:1.05, epicea:1.25, peuplier:0.85, meleze:1.10, chataignier:0.80 } },
+    { id:"sud_ouest",     label:"Aquitaine / Landes",         icon:"🌲", note:"Sables landais, douceur atlantique — pin maritime & douglas excellents",
+      coeff:{ chene:0.95, hetre:0.85, pin:1.40, douglas:1.35, epicea:0.75, peuplier:1.20, meleze:0.70, chataignier:1.05 } },
+    { id:"massif_central",label:"Massif Central / Auvergne",  icon:"🏔", note:"Altitude 600-1200m, sols volcaniques — douglas très productif",
+      coeff:{ chene:0.85, hetre:0.95, pin:1.05, douglas:1.30, epicea:1.10, peuplier:0.70, meleze:0.95, chataignier:0.90 } },
+    { id:"alpes_jura",    label:"Alpes / Jura / Franche-Comté",icon:"🗻",note:"Sols calcaires à altitude — bois dense",
+      coeff:{ chene:0.80, hetre:0.90, pin:0.95, douglas:1.10, epicea:1.05, peuplier:0.65, meleze:1.20, chataignier:0.70 } },
+    { id:"bourgogne",     label:"Bourgogne / Morvan",         icon:"🍷", note:"Forêts mixtes, argilo-calcaire — chêne de qualité exceptionnelle",
+      coeff:{ chene:1.05, hetre:1.00, pin:0.90, douglas:1.15, epicea:0.90, peuplier:1.00, meleze:0.85, chataignier:1.00 } },
+    { id:"mediterranee",  label:"Méditerranée / PACA",        icon:"☀️", note:"Sécheresse estivale — croissance limitée, bois dense",
+      coeff:{ chene:0.70, hetre:0.75, pin:0.85, douglas:0.80, epicea:0.65, peuplier:0.90, meleze:0.85, chataignier:0.85 } },
+    { id:"pyrenees",      label:"Pyrénées / Occitanie",       icon:"🏕", note:"Gradient altitudinal, façade atlantique — hêtre dominant",
+      coeff:{ chene:0.90, hetre:1.10, pin:1.05, douglas:1.10, epicea:0.95, peuplier:0.95, meleze:0.95, chataignier:1.00 } },
+  ],
+  CA: [
+    { id:"laurentides",   label:"Laurentides / Lanaudière",   icon:"🍁", note:"Bouclier canadien, forêt mixte — érable et épinette dominants",
+      coeff:{ chene:0.90, hetre:1.00, pin:0.95, douglas:0.85, epicea:1.10, peuplier:1.00, meleze:0.95, chataignier:0.80 } },
+    { id:"estrie",        label:"Estrie / Cantons-de-l'Est",  icon:"🍂", note:"Appalaches, forêt feuillue tempérée — érable à sucre exceptionnel",
+      coeff:{ chene:1.05, hetre:1.10, pin:0.90, douglas:0.85, epicea:1.00, peuplier:0.95, meleze:0.90, chataignier:1.00 } },
+    { id:"outaouais",     label:"Outaouais / Abitibi",        icon:"🌊", note:"Plaines argileuses, fort régime hydrique — peuplier et épinette",
+      coeff:{ chene:0.85, hetre:0.90, pin:1.00, douglas:0.80, epicea:1.15, peuplier:1.20, meleze:1.00, chataignier:0.75 } },
+    { id:"saguenay",      label:"Saguenay / Lac-Saint-Jean",  icon:"❄️", note:"Zone boréale sudique — épinette noire dominante, mélèze en tourbières",
+      coeff:{ chene:0.70, hetre:0.75, pin:1.05, douglas:0.75, epicea:1.25, peuplier:1.05, meleze:1.10, chataignier:0.65 } },
+    { id:"cote_nord",     label:"Côte-Nord / Nord-du-QC",     icon:"🐻", note:"Forêt boréale — épinette noire et sapin baumier, croissance lente",
+      coeff:{ chene:0.60, hetre:0.65, pin:0.95, douglas:0.70, epicea:1.20, peuplier:0.95, meleze:1.15, chataignier:0.55 } },
+    { id:"bas_st_laurent",label:"Bas-Saint-Laurent / Gaspésie",icon:"🌊",note:"Forêt mixte maritime — bonne productivité, sapin et épinette",
+      coeff:{ chene:0.80, hetre:0.95, pin:1.00, douglas:0.80, epicea:1.10, peuplier:1.05, meleze:1.00, chataignier:0.70 } },
+    { id:"ontario_sw",    label:"Ontario Sud / Ottawa",       icon:"🍁", note:"Forêt carolinienne et mixte — feuillus nobles, érable et noyer",
+      coeff:{ chene:1.10, hetre:1.05, pin:1.00, douglas:0.90, epicea:0.90, peuplier:1.00, meleze:0.85, chataignier:1.10 } },
+  ],
+};
 
-// Base species data (valeurs de référence IFN, station moyenne)
-// Sources : CNPF fiches essences 2019-2023, ONF guide des sylvicultures
+const getRegions = (country) => REGIONS_BY_COUNTRY[country] || REGIONS_BY_COUNTRY.FR;
+const REGIONS = REGIONS_BY_COUNTRY.FR; // backward compat
+
+
 const SPECIES_BASE = [
   { id:"chene",      label:"Chêne pédonculé",  icon:"🌳", diam_rate:0.42, h_rate:0.35, max_d:100, max_h:30, target_d:60, desc:"Essence noble, bois de qualité",        color:"#a8845a" },
   { id:"hetre",      label:"Hêtre",            icon:"🌲", diam_rate:0.52, h_rate:0.45, max_d:90,  max_h:35, target_d:55, desc:"Bois blanc dense, hêtraies d'altitude", color:"#8a6a8a" },
@@ -1301,9 +1358,10 @@ function GrowthChart({ data, targetD, speciesColor }) {
   );
 }
 
-function AnalysisScreen({ trees, profile, onClose }) {
+function AnalysisScreen({ trees, profile, country, onClose }) {
   const fmtN = (n, d=1) => n.toLocaleString("fr-FR", { minimumFractionDigits:d, maximumFractionDigits:d });
-  const [selectedRegion, setSelectedRegion] = useState(REGIONS[1]); // IDF default
+  const activeRegions = getRegions(country||"FR");
+  const [selectedRegion, setSelectedRegion] = useState(activeRegions[1]||activeRegions[0]); // IDF default
   const SPECIES = getSpecies(selectedRegion.id);
   const [selectedSpecies, setSelectedSpecies] = useState(SPECIES_BASE[0]);
   const [customRate, setCustomRate] = useState("0.80");
@@ -1320,7 +1378,7 @@ function AnalysisScreen({ trees, profile, onClose }) {
   })();
 
   // Get region-adjusted species list and current species
-  const regionSpecies = getSpecies(selectedRegion.id);
+  const regionSpecies = getSpecies(selectedRegion.id, country||"FR");
   const currentSpeciesData = regionSpecies.find(s=>s.id===selectedSpecies.id) || regionSpecies[0];
   // Apply user-defined target diameter if set, otherwise use species default
   const userTarget = parseFloat(customTarget);
@@ -1360,7 +1418,7 @@ function AnalysisScreen({ trees, profile, onClose }) {
           <div style={{ background:"rgba(28,28,30,0.85)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,backdropFilter:"blur(24px)",padding:"16px" }}>
             <div style={{ fontFamily:"'SF Pro Display',-apple-system,sans-serif",fontSize:12,fontWeight:600,color:C.label,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:12 }}>Région sylvicole</div>
             <div style={{ display:"flex",flexDirection:"column",gap:2,marginBottom:8 }}>
-              {REGIONS.map(r=>(
+              {activeRegions.map(r=>(
                 <button key={r.id} onClick={()=>setSelectedRegion(r)} style={{
                   display:"flex",alignItems:"center",gap:10,padding:"11px 14px",
                   borderRadius:10,border:`1px solid ${selectedRegion.id===r.id?"rgba(100,200,80,0.4)":"rgba(255,255,255,0.06)"}`,
@@ -1607,23 +1665,48 @@ function AnalysisScreen({ trees, profile, onClose }) {
    PATRIMOINE — Prix de référence
    Source : France Bois Forêt / ONF / FCBA 2024
 ═══════════════════════════════════════ */
-// Prix source : France Bois Foret Indicateur 2025 (prix 2024, publie avril 2025)
-// + Note de conjoncture France Bois Foret / ONF H1 2025 (janv. 2026)
-// Tendance H1 2025 : resineux et hetre en hausse, chene en recul
-const ESSENCE_LIST = [
-  { id:"chene_qual",  label:"Chene qualite (BO)", icon:"🌳", ref_min:150, ref_max:400, ref_mid:228, trend:"-3%", trend_dir:-1, src:"FBF 2025" },
-  { id:"chene_ind",   label:"Chene industrie",    icon:"🌳", ref_min:50,  ref_max:90,  ref_mid:68,  trend:"stable", trend_dir:0, src:"FBF 2025" },
-  { id:"hetre",       label:"Hetre",              icon:"🌲", ref_min:40,  ref_max:80,  ref_mid:56,  trend:"+1%", trend_dir:1, src:"FBF 2025" },
-  { id:"douglas",     label:"Douglas",            icon:"🎄", ref_min:65,  ref_max:120, ref_mid:89,  trend:"+24%", trend_dir:1, src:"FBF 2025" },
-  { id:"pin_syl",     label:"Pin sylvestre",      icon:"🌲", ref_min:35,  ref_max:65,  ref_mid:50,  trend:"+13%", trend_dir:1, src:"ONF 2025" },
-  { id:"pin_mar",     label:"Pin maritime",       icon:"🌲", ref_min:40,  ref_max:70,  ref_mid:56,  trend:"+10%", trend_dir:1, src:"FBF 2025" },
-  { id:"epicea",      label:"Epicea",             icon:"🎄", ref_min:40,  ref_max:75,  ref_mid:56,  trend:"stable", trend_dir:0, src:"ONF Q4 2024" },
-  { id:"peuplier",    label:"Peuplier",           icon:"🌿", ref_min:55,  ref_max:95,  ref_mid:73,  trend:"+26%", trend_dir:1, src:"FBF 2025" },
-  { id:"meleze",      label:"Meleze",             icon:"🌲", ref_min:65,  ref_max:110, ref_mid:85,  trend:"stable", trend_dir:0, src:"Estimation" },
-  { id:"chataignier", label:"Chataignier",        icon:"🌰", ref_min:80,  ref_max:160, ref_mid:119, trend:"+26%", trend_dir:1, src:"FBF 2025" },
-  { id:"frene",       label:"Frene",              icon:"🌳", ref_min:100, ref_max:220, ref_mid:158, trend:"+6%", trend_dir:1, src:"FBF 2025" },
-  { id:"autre",       label:"Autre / Mixte",      icon:"🌳", ref_min:40,  ref_max:100, ref_mid:65,  trend:"—", trend_dir:0, src:"Estimation" },
-];
+// ═══════════════════════════════════════════════════════════════
+// ESSENCES & PRIX PAR PAYS
+// France : FBF Indicateur 2025 + ONF H1 2025
+// Canada (QC) : Ressources naturelles Canada / MRNF QC 2024
+// ═══════════════════════════════════════════════════════════════
+const ESSENCES_BY_COUNTRY = {
+  FR: [
+    { id:"chene_qual",  label:"Chêne qualité (BO)", icon:"🌳", ref_min:150, ref_max:400, ref_mid:228, trend:"-3%", trend_dir:-1, src:"FBF 2025" },
+    { id:"chene_ind",   label:"Chêne industrie",    icon:"🌳", ref_min:50,  ref_max:90,  ref_mid:68,  trend:"stable", trend_dir:0, src:"FBF 2025" },
+    { id:"hetre",       label:"Hêtre",              icon:"🌲", ref_min:40,  ref_max:80,  ref_mid:56,  trend:"+1%", trend_dir:1, src:"FBF 2025" },
+    { id:"douglas",     label:"Douglas",            icon:"🎄", ref_min:65,  ref_max:120, ref_mid:89,  trend:"+24%", trend_dir:1, src:"FBF 2025" },
+    { id:"pin_syl",     label:"Pin sylvestre",      icon:"🌲", ref_min:35,  ref_max:65,  ref_mid:50,  trend:"+13%", trend_dir:1, src:"ONF 2025" },
+    { id:"pin_mar",     label:"Pin maritime",       icon:"🌲", ref_min:40,  ref_max:70,  ref_mid:56,  trend:"+10%", trend_dir:1, src:"FBF 2025" },
+    { id:"epicea",      label:"Épicéa",             icon:"🎄", ref_min:40,  ref_max:75,  ref_mid:56,  trend:"stable", trend_dir:0, src:"ONF Q4 2024" },
+    { id:"peuplier",    label:"Peuplier",           icon:"🌿", ref_min:55,  ref_max:95,  ref_mid:73,  trend:"+26%", trend_dir:1, src:"FBF 2025" },
+    { id:"meleze",      label:"Mélèze",             icon:"🌲", ref_min:65,  ref_max:110, ref_mid:85,  trend:"stable", trend_dir:0, src:"Estimation" },
+    { id:"chataignier", label:"Châtaignier",        icon:"🌰", ref_min:80,  ref_max:160, ref_mid:119, trend:"+26%", trend_dir:1, src:"FBF 2025" },
+    { id:"frene",       label:"Frêne",              icon:"🌳", ref_min:100, ref_max:220, ref_mid:158, trend:"+6%", trend_dir:1, src:"FBF 2025" },
+    { id:"autre",       label:"Autre / Mixte",      icon:"🌳", ref_min:40,  ref_max:100, ref_mid:65,  trend:"—", trend_dir:0, src:"Estimation" },
+  ],
+  CA: [
+    { id:"epinette_bl", label:"Épinette blanche",   icon:"🎄", ref_min:55,  ref_max:110, ref_mid:78,  trend:"+8%",  trend_dir:1, src:"MRNF QC 2024" },
+    { id:"epinette_nr", label:"Épinette noire",     icon:"🎄", ref_min:50,  ref_max:95,  ref_mid:70,  trend:"+5%",  trend_dir:1, src:"MRNF QC 2024" },
+    { id:"sapin",       label:"Sapin baumier",      icon:"🌲", ref_min:45,  ref_max:90,  ref_mid:65,  trend:"+4%",  trend_dir:1, src:"MRNF QC 2024" },
+    { id:"pin_gris",    label:"Pin gris (jack)",    icon:"🌲", ref_min:35,  ref_max:75,  ref_mid:52,  trend:"stable",trend_dir:0, src:"RNCan 2024" },
+    { id:"pin_rouge",   label:"Pin rouge",          icon:"🌲", ref_min:50,  ref_max:100, ref_mid:72,  trend:"+6%",  trend_dir:1, src:"RNCan 2024" },
+    { id:"meleze_qc",   label:"Mélèze laricin",    icon:"🌲", ref_min:45,  ref_max:85,  ref_mid:62,  trend:"stable",trend_dir:0, src:"MRNF QC 2024" },
+    { id:"bouleau_j",   label:"Bouleau jaune",      icon:"🌳", ref_min:80,  ref_max:180, ref_mid:125, trend:"+3%",  trend_dir:1, src:"MRNF QC 2024" },
+    { id:"bouleau_b",   label:"Bouleau blanc",      icon:"🌳", ref_min:40,  ref_max:80,  ref_mid:55,  trend:"+2%",  trend_dir:1, src:"RNCan 2024" },
+    { id:"erable_s",    label:"Érable à sucre",     icon:"🍁", ref_min:90,  ref_max:220, ref_mid:145, trend:"+5%",  trend_dir:1, src:"MRNF QC 2024" },
+    { id:"peuplier_faux",label:"Peuplier faux-tremble",icon:"🌿", ref_min:30, ref_max:65, ref_mid:45, trend:"stable",trend_dir:0, src:"RNCan 2024" },
+    { id:"frene_blanc", label:"Frêne blanc",        icon:"🌳", ref_min:50,  ref_max:130, ref_mid:85,  trend:"-5%",  trend_dir:-1, src:"MRNF QC 2024" },
+    { id:"cedre_blanc", label:"Cèdre blanc (thuya)",icon:"🌲", ref_min:60,  ref_max:120, ref_mid:85,  trend:"+7%",  trend_dir:1, src:"RNCan 2024" },
+    { id:"autre",       label:"Autre / Mixte",      icon:"🌳", ref_min:35,  ref_max:90,  ref_mid:55,  trend:"—", trend_dir:0, src:"Estimation" },
+  ],
+};
+
+const getEssenceList = (country) => ESSENCES_BY_COUNTRY[country] || ESSENCES_BY_COUNTRY.FR;
+// Keep backward compat — default to FR
+const ESSENCE_LIST = ESSENCES_BY_COUNTRY.FR;
+
+
 const PATRIMOINE_KEY = "iForestier_patrimoine";
 
 
@@ -1764,9 +1847,42 @@ const PRICE_HISTORY = {
   ],
 };
 
-function MarcheTab() {
+
+const PRICE_HISTORY_CA = {
+  periods: ["2020","2021","2022","2023","2024","H1 2025"],
+  // Sources : MRNF QC Bilan forestier 2024, RNCan Statistiques forestières, CMQ 2025
+  essences: [
+    { id:"erable_s",   label:"Érable à sucre",      icon:"🍁", color:"#c8503a",
+      prices:[105, 118, 132, 140, 145, null], trend:1,
+      note:"MRNF QC 2024 — +5% en 2024. Demande soutenue pour planchers, mobilier et fumage alimentaire. H1 2025 : prix fermes, offre limitée par coupes de jardinage." },
+    { id:"bouleau_j",  label:"Bouleau jaune",        icon:"🌳", color:"#d4a843",
+      prices:[90, 100, 115, 122, 125, null], trend:1,
+      note:"MRNF QC 2024 — +3% en 2024. Apprécié pour le mobilier et les bois de spécialité. Ressource en tension dans les peuplements matures." },
+    { id:"epinette_bl",label:"Épinette blanche",     icon:"🎄", color:"#5a8a5a",
+      prices:[55, 68, 78, 72, 78, null], trend:1,
+      note:"MRNF QC 2024 — +8% en 2024 après correction de 2023. Bois de charpente et de sciage principal au Québec. H1 2025 : reprise de la construction." },
+    { id:"epinette_nr",label:"Épinette noire",       icon:"🎄", color:"#3a6a3a",
+      prices:[48, 60, 72, 65, 70, null], trend:1,
+      note:"MRNF QC 2024 — +5% en 2024. Pâte à papier et sciage. Croissance lente mais bois résistant. Ressource abondante en zone boréale." },
+    { id:"sapin",      label:"Sapin baumier",        icon:"🌲", color:"#4a8a4a",
+      prices:[42, 52, 62, 58, 65, null], trend:1,
+      note:"MRNF QC 2024 — +4% en 2024. Bois de sciage d'usage général. Abondant, traitement phytosanitaire requis (nœuds)." },
+    { id:"pin_rouge",  label:"Pin rouge",            icon:"🌲", color:"#a05030",
+      prices:[55, 65, 75, 68, 72, null], trend:1,
+      note:"RNCan 2024 — +6% en 2024. Bois de traitement et de construction extérieure. Ontario et QC occidental principalement." },
+    { id:"cedre_blanc",label:"Cèdre blanc (thuya)",  icon:"🌲", color:"#7a9060",
+      prices:[60, 70, 82, 78, 85, null], trend:1,
+      note:"RNCan 2024 — +7% en 2024. Très apprécié pour la résistance naturelle à la pourriture (clôtures, bardages, terrasses). Demande en hausse." },
+    { id:"frene_blanc",label:"Frêne blanc",          icon:"🌳", color:"#6a7050",
+      prices:[95, 88, 80, 72, 68, null], trend:-1,
+      note:"MRNF QC 2024 — -5% en 2024. Déclin causé par l'agrile du frêne (infestation massive). Espèce en forte régression, marchés perturbés." },
+  ],
+};
+
+function MarcheTab({ country }) {
   const SF = "'SF Pro Display',-apple-system,sans-serif";
-  const { periods, essences } = PRICE_HISTORY;
+  const activeHistory = country === "CA" ? PRICE_HISTORY_CA : PRICE_HISTORY;
+  const { periods, essences } = activeHistory;
   const [sel, setSel] = useState(essences[0]);
 
   const ess = essences.find(e => e.id === sel.id) || essences[0];
@@ -1984,7 +2100,7 @@ function MarcheTab() {
 }
 
 
-function PatrimoineScreen({ profile, onClose }) {
+function PatrimoineScreen({ profile, country, onClose }) {
   const SF = "'SF Pro Display',-apple-system,sans-serif";
   const [history, setHistory] = useState([]);
   const [sold, setSold] = useState([]); // [cubage_id]
@@ -2054,7 +2170,7 @@ function PatrimoineScreen({ profile, onClose }) {
 
   const getEssence = (cubageId, parcel) => {
     const key = cubageId+"_"+(parcel.id||parcel.name);
-    return ESSENCE_LIST.find(e=>e.id===(essenceOverrides[key] || parcel.essence)) || ESSENCE_LIST[ESSENCE_LIST.length-1];
+    return getEssenceList(country||'FR').find(e=>e.id===(essenceOverrides[key] || parcel.essence)) || getEssenceList(country||'FR').slice(-1)[0];
   };
   const getPrice = (ess) => customPrices[ess.id] || ess.ref_mid;
 
@@ -2105,115 +2221,130 @@ function PatrimoineScreen({ profile, onClose }) {
         {loading && <div style={{ textAlign:"center",padding:"60px 0",fontFamily:SF,fontSize:15,color:C.label }}>Chargement...</div>}
 
         {activeTab === "portfolio" && !loading && history.length === 0 && (
-          <div style={{ background:"rgba(28,28,30,0.85)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"48px 24px",textAlign:"center",backdropFilter:"blur(16px)" }}>
-            <div style={{ fontSize:48,marginBottom:16 }}>🌲</div>
-            <div style={{ fontFamily:SF,fontSize:18,fontWeight:600,color:"#fff",marginBottom:8 }}>Aucun cubage enregistre</div>
-            <div style={{ fontFamily:SF,fontSize:13,color:C.label,lineHeight:1.5 }}>Enregistrez un cubage depuis la page Rapport pour voir votre patrimoine ici.</div>
+          <div style={{ borderRadius:20,padding:"48px 24px",textAlign:"center" }}>
+            <div style={{ fontSize:56,marginBottom:16 }}>🌲</div>
+            <div style={{ fontFamily:SF,fontSize:20,fontWeight:700,color:"#fff",marginBottom:10 }}>Aucun cubage enregistré</div>
+            <div style={{ fontFamily:SF,fontSize:14,color:C.label,lineHeight:1.7,maxWidth:280,margin:"0 auto" }}>
+              Terminez un cubage et enregistrez-le depuis la page Rapport pour voir votre patrimoine ici.
+            </div>
           </div>
         )}
 
         {activeTab === "portfolio" && !loading && history.length > 0 && (
           <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
 
-            {/* Total wallet card */}
-            <div style={{ background:"rgba(10,18,4,0.9)",border:"1px solid rgba(255,214,10,0.3)",borderLeft:"3px solid rgba(255,214,10,0.6)",borderRadius:16,padding:"20px",backdropFilter:"blur(18px)",boxShadow:"0 8px 40px rgba(0,0,0,0.6)" }}>
-              <div style={{ fontFamily:SF,fontSize:11,fontWeight:600,color:C.label,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12 }}>
-                Valeur estimee du patrimoine
+            {/* ── WALLET TOTAL ── */}
+            <div style={{ background:"rgba(12,22,8,0.95)",border:"1px solid rgba(255,214,10,0.25)",borderRadius:20,padding:"20px 20px 16px",backdropFilter:"blur(20px)" }}>
+              <div style={{ fontFamily:SF,fontSize:11,fontWeight:600,color:"rgba(255,214,10,0.55)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6 }}>
+                Patrimoine estimé
               </div>
-              <div style={{ fontFamily:SF,fontWeight:900,fontSize:"clamp(2.6rem,9vw,3.8rem)",color:C.yellow,lineHeight:1,letterSpacing:"-0.03em",textShadow:"0 0 30px rgba(255,214,10,0.4)" }}>
-                {fmt(totalVal)} <span style={{ fontSize:18,fontWeight:400,color:"rgba(255,214,10,0.6)" }}>€</span>
-              </div>
-              <div style={{ display:"flex",gap:16,marginTop:10 }}>
+              <div style={{ display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:16 }}>
                 <div>
-                  <div style={{ fontFamily:SF,fontSize:11,color:C.label }}>Volume sur pied</div>
-                  <div style={{ fontFamily:SF,fontSize:16,fontWeight:700,color:C.greenText }}>{fmt(totalVol,1)} m³</div>
+                  <div style={{ fontFamily:SF,fontWeight:800,fontSize:"clamp(2.4rem,8vw,3.2rem)",color:C.yellow,lineHeight:1,letterSpacing:"-0.03em" }}>
+                    {fmt(totalVal)}
+                    <span style={{ fontSize:16,fontWeight:400,color:"rgba(255,214,10,0.5)",marginLeft:4 }}>€</span>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontFamily:SF,fontSize:11,color:C.label }}>Parcelles actives</div>
-                  <div style={{ fontFamily:SF,fontSize:16,fontWeight:700,color:"#fff" }}>{stock.length}</div>
-                </div>
-                <div>
-                  <div style={{ fontFamily:SF,fontSize:11,color:C.label }}>Essences</div>
-                  <div style={{ fontFamily:SF,fontSize:16,fontWeight:700,color:"#fff" }}>{essenceGroups.length}</div>
+                <div style={{ textAlign:"right" }}>
+                  <div style={{ fontFamily:SF,fontSize:12,color:C.label }}>mis à jour</div>
+                  <div style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.5)" }}>{new Date().toLocaleDateString("fr-FR")}</div>
                 </div>
               </div>
-              <div style={{ fontFamily:SF,fontSize:10,color:"rgba(255,255,255,0.2)",marginTop:8,fontStyle:"italic" }}>
-                {"Prix ref. FBF Indicateur 2025 + ONF H1 2025 — modifiables manuellement"}
+              {/* 3 stats */}
+              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8 }}>
+                {[
+                  { label:"Volume", value:fmt(totalVol,1)+" m³", color:C.greenText },
+                  { label:"Cubages", value:String(stock.length), color:"#fff" },
+                  { label:"Essences", value:String(essenceGroups.length), color:"#fff" },
+                ].map((s,i)=>(
+                  <div key={i} style={{ background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"10px 12px" }}>
+                    <div style={{ fontFamily:SF,fontSize:10,color:C.label,marginBottom:4 }}>{s.label}</div>
+                    <div style={{ fontFamily:SF,fontSize:16,fontWeight:700,color:s.color }}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontFamily:SF,fontSize:10,color:"rgba(255,255,255,0.18)",marginTop:10,fontStyle:"italic" }}>
+                FBF Indicateur 2025 · ONF H1 2025 — prix modifiables
               </div>
             </div>
 
-            {/* Per-essence breakdown */}
+            {/* ── ESSENCES ── */}
             {essenceGroups.length > 0 && (
-              <div style={{ display:"flex",flexDirection:"column",gap:2 }}>
-                <div style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:C.label,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6,paddingLeft:4 }}>
-                  Valorisation par essence
+              <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
+                <div style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:C.label,textTransform:"uppercase",letterSpacing:"0.07em",paddingLeft:2 }}>
+                  Par essence
                 </div>
-                {essenceGroups.map((group, gi) => {
+                {essenceGroups.map((group) => {
                   const price = getPrice(group.ess);
                   const val = group.vol * price;
                   const isCustom = !!customPrices[group.ess.id];
                   const isEditing = editPrice === group.ess.id;
                   const pct = totalVol > 0 ? (group.vol / totalVol) * 100 : 0;
+                  const barW = Math.max(4, Math.round(pct));
                   return (
                     <div key={group.ess.id} style={{
-                      background:"rgba(28,28,30,0.85)",border:"1px solid rgba(255,255,255,0.07)",
-                      borderRadius: gi===0?"14px 14px 4px 4px":gi===essenceGroups.length-1?"4px 4px 14px 14px":"4px",
-                      overflow:"hidden",backdropFilter:"blur(16px)",
+                      background:"rgba(28,28,30,0.9)",border:"1px solid rgba(255,255,255,0.08)",
+                      borderRadius:16,overflow:"hidden",backdropFilter:"blur(16px)",
                     }}>
-                      <div style={{ padding:"14px 16px" }}>
-                        <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:10 }}>
-                          <span style={{ fontSize:22 }}>{group.ess.icon}</span>
-                          <div style={{ flex:1 }}>
-                            <div style={{ fontFamily:SF,fontSize:15,fontWeight:700,color:"#fff" }}>{group.ess.label}</div>
-                            <div style={{ fontFamily:SF,fontSize:12,color:C.label,marginTop:1 }}>{group.parcels.length} parcelle{group.parcels.length>1?"s":""} · {fmt(group.vol,2)} m³</div>
-                          </div>
-                          <div style={{ textAlign:"right" }}>
-                            <div style={{ fontFamily:SF,fontSize:17,fontWeight:800,color:C.yellow }}>{fmt(val)} €</div>
-                            <div style={{ fontFamily:SF,fontSize:11,color:C.label,marginTop:1 }}>{fmt(pct,0)}% du stock</div>
+                      {/* Top row */}
+                      <div style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 16px 12px" }}>
+                        <div style={{ width:44,height:44,borderRadius:12,background:"rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0 }}>
+                          {group.ess.icon}
+                        </div>
+                        <div style={{ flex:1,minWidth:0 }}>
+                          <div style={{ fontFamily:SF,fontSize:15,fontWeight:700,color:"#fff",marginBottom:2 }}>{group.ess.label}</div>
+                          <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                            <span style={{ fontFamily:SF,fontSize:12,color:C.label }}>{fmt(group.vol,2)} m³</span>
+                            <span style={{ fontFamily:SF,fontSize:11,color:"rgba(255,255,255,0.2)" }}>·</span>
+                            <span style={{ fontFamily:SF,fontSize:12,color:C.label }}>{group.parcels.length} parcelle{group.parcels.length>1?"s":""}</span>
                           </div>
                         </div>
-                        {/* Progress bar */}
-                        <div style={{ height:3,background:"rgba(255,255,255,0.06)",borderRadius:2,marginBottom:10,overflow:"hidden" }}>
-                          <div style={{ height:"100%",width:`${pct}%`,background:`linear-gradient(to right, rgba(255,214,10,0.5), rgba(255,214,10,0.9))`,borderRadius:2 }}/>
+                        <div style={{ textAlign:"right",flexShrink:0 }}>
+                          <div style={{ fontFamily:SF,fontSize:18,fontWeight:800,color:C.yellow,lineHeight:1 }}>{fmt(val)} €</div>
+                          <div style={{ fontFamily:SF,fontSize:11,color:C.label,marginTop:3 }}>{fmt(pct,0)}% du stock</div>
                         </div>
-                        {/* Price row */}
+                      </div>
+                      {/* Progress bar */}
+                      <div style={{ height:2,background:"rgba(255,255,255,0.05)",marginBottom:12,marginLeft:16,marginRight:16,borderRadius:1,overflow:"hidden" }}>
+                        <div style={{ height:"100%",width:`${barW}%`,background:"rgba(255,214,10,0.7)",borderRadius:1 }}/>
+                      </div>
+                      {/* Price row */}
+                      <div style={{ padding:"0 16px 14px" }}>
                         {!isEditing ? (
                           <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-                            <div style={{ flex:1,background:"rgba(255,255,255,0.04)",borderRadius:8,padding:"8px 12px" }}>
-                              <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:2 }}>
-                                <span style={{ fontFamily:SF,fontSize:10,color:C.label }}>{isCustom ? "Prix manuel" : group.ess.src}</span>
-                                {!isCustom && group.ess.trend_dir!==0 && (
-                                  <span style={{ fontFamily:SF,fontSize:10,fontWeight:700,color:group.ess.trend_dir>0?"rgba(50,215,75,0.9)":"rgba(255,100,80,0.9)" }}>
-                                    {group.ess.trend}
-                                  </span>
-                                )}
+                            <div style={{ flex:1,background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+                              <div>
+                                <div style={{ fontFamily:SF,fontSize:10,color:C.label,marginBottom:3 }}>
+                                  {isCustom ? "Prix saisi manuellement" : "Réf. "+group.ess.src}
+                                  {!isCustom && group.ess.trend_dir!==0 && <span style={{ marginLeft:6,color:group.ess.trend_dir>0?"rgba(50,215,75,0.8)":"rgba(255,100,80,0.8)",fontWeight:700 }}>{group.ess.trend}</span>}
+                                </div>
+                                <div style={{ fontFamily:SF,fontSize:17,fontWeight:700,color:isCustom?C.yellow:"rgba(255,255,255,0.85)" }}>
+                                  {fmt(price,0)} <span style={{ fontSize:13,fontWeight:400,color:C.label }}>€/m³</span>
+                                </div>
                               </div>
-                              <div style={{ fontFamily:SF,fontSize:15,fontWeight:600,color:isCustom?C.yellow:"rgba(255,255,255,0.8)" }}>
-                                {fmt(price,0)} {"€/m³"}
-                                {!isCustom && <span style={{ color:"rgba(255,255,255,0.22)",fontSize:11 }}>{" ("+fmt(group.ess.ref_min,0)+"-"+fmt(group.ess.ref_max,0)+")"}</span>}
-                              </div>
+                              {!isCustom && <div style={{ fontFamily:SF,fontSize:11,color:"rgba(255,255,255,0.2)",textAlign:"right" }}>{fmt(group.ess.ref_min,0)}–{fmt(group.ess.ref_max,0)}</div>}
                             </div>
                             <button onClick={()=>{setEditPrice(group.ess.id);setEditVal(String(price));}} style={{
-                              padding:"8px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.12)",
+                              width:42,height:42,borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",
                               background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.6)",
-                              fontFamily:SF,fontSize:13,cursor:"pointer",
+                              fontSize:17,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
                             }}>✏️</button>
                             {isCustom && <button onClick={()=>clearPrice(group.ess.id)} style={{
-                              padding:"8px 12px",borderRadius:8,border:"none",
-                              background:"rgba(255,69,58,0.1)",color:"rgba(255,69,58,0.7)",
-                              fontFamily:SF,fontSize:12,cursor:"pointer",
+                              height:42,padding:"0 12px",borderRadius:10,border:"none",
+                              background:"rgba(255,69,58,0.1)",color:"rgba(255,100,80,0.8)",
+                              fontFamily:SF,fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0,
                             }}>Réf.</button>}
                           </div>
                         ) : (
-                          <div style={{ display:"flex",gap:8,alignItems:"center",animation:"fadeIn .2s ease" }}>
-                            <div style={{ flex:1,position:"relative",background:"rgba(0,0,0,0.3)",border:"1px solid rgba(255,214,10,0.35)",borderRadius:8 }}>
+                          <div style={{ display:"flex",gap:8,alignItems:"center" }}>
+                            <div style={{ flex:1,position:"relative",background:"rgba(0,0,0,0.4)",border:"1px solid rgba(255,214,10,0.4)",borderRadius:10 }}>
                               <input autoFocus type="number" min="0" step="1" value={editVal} onChange={e=>setEditVal(e.target.value)}
                                 onKeyDown={e=>e.key==="Enter"&&savePrice(group.ess.id)}
-                                style={{ width:"100%",background:"transparent",border:"none",padding:"10px 46px 10px 12px",color:"#fff",fontFamily:SF,fontSize:16,outline:"none",fontWeight:600 }}/>
-                              <span style={{ position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:C.label,fontSize:12 }}>{"€/m³"}</span>
+                                style={{ width:"100%",background:"transparent",border:"none",padding:"12px 50px 12px 14px",color:"#fff",fontFamily:SF,fontSize:18,outline:"none",fontWeight:700 }}/>
+                              <span style={{ position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:C.label,fontSize:13 }}>€/m³</span>
                             </div>
-                            <button onClick={()=>savePrice(group.ess.id)} style={{ padding:"10px 16px",borderRadius:8,border:"none",background:C.yellow,color:"#000",fontFamily:SF,fontSize:14,fontWeight:700,cursor:"pointer" }}>OK</button>
-                            <button onClick={()=>{setEditPrice(null);setEditVal("");}} style={{ padding:"10px",borderRadius:8,border:"none",background:"rgba(255,255,255,0.08)",color:C.label,fontFamily:SF,fontSize:14,cursor:"pointer" }}>✕</button>
+                            <button onClick={()=>savePrice(group.ess.id)} style={{ height:46,padding:"0 18px",borderRadius:10,border:"none",background:C.yellow,color:"#000",fontFamily:SF,fontSize:15,fontWeight:800,cursor:"pointer" }}>OK</button>
+                            <button onClick={()=>{setEditPrice(null);setEditVal("");}} style={{ width:46,height:46,borderRadius:10,border:"none",background:"rgba(255,255,255,0.07)",color:C.label,fontFamily:SF,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
                           </div>
                         )}
                       </div>
@@ -2225,30 +2356,33 @@ function PatrimoineScreen({ profile, onClose }) {
 
             {/* Cubages en stock */}
             <div style={{ marginTop:4 }}>
-              <div style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:C.label,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:8,paddingLeft:4 }}>
-                Cubages en stock
+              <div style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:C.label,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10,paddingLeft:2 }}>
+                Cubages en stock · {stock.length}
               </div>
-              <div style={{ display:"flex",flexDirection:"column",gap:2 }}>
+              <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
                 {stock.map((cubage,ci) => {
                   const cv = cubage.trees?.reduce((s,t)=>s+t.logs.reduce((ss,l)=>ss+l.v,0),0)||0;
                   return (
-                    <div key={cubage.id} style={{ background:"rgba(28,28,30,0.8)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:ci===0?"14px 14px 4px 4px":ci===stock.length-1?"4px 4px 14px 14px":"4px",padding:"14px 16px",backdropFilter:"blur(14px)" }}>
-                      <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:cubage.trees?.length>0?10:0 }}>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontFamily:SF,fontSize:14,fontWeight:600,color:"#fff" }}>{cubage.domain}</div>
-                          <div style={{ fontFamily:SF,fontSize:12,color:C.label,marginTop:1 }}>
+                    <div key={cubage.id} style={{ background:"rgba(28,28,30,0.88)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,overflow:"hidden",backdropFilter:"blur(14px)" }}>
+                      <div style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:cubage.trees?.length>0?"1px solid rgba(255,255,255,0.06)":"none" }}>
+                        <div style={{ width:40,height:40,borderRadius:10,background:"rgba(50,215,75,0.1)",border:"1px solid rgba(50,215,75,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0 }}>🌲</div>
+                        <div style={{ flex:1,minWidth:0 }}>
+                          <div style={{ fontFamily:SF,fontSize:15,fontWeight:700,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{cubage.domain}</div>
+                          <div style={{ fontFamily:SF,fontSize:12,color:C.label,marginTop:2 }}>
                             {cubage.date} · {cubage.trees?.length||0} parcelle{(cubage.trees?.length||0)>1?"s":""}
                           </div>
                         </div>
-                        <div style={{ fontFamily:SF,fontSize:15,fontWeight:700,color:C.greenText }}>{fmt(cv,2)} m³</div>
-                        {confirmSell===cubage.id ? (
-                          <div style={{ display:"flex",gap:6 }}>
-                            <button onClick={()=>setConfirmSell(null)} style={{ padding:"7px 10px",borderRadius:8,border:"none",background:"rgba(255,255,255,0.08)",color:C.label,fontFamily:SF,fontSize:12,cursor:"pointer" }}>Annuler</button>
-                            <button onClick={()=>markSold(cubage.id)} style={{ padding:"7px 12px",borderRadius:8,border:"none",background:"rgba(255,69,58,0.85)",color:"#fff",fontFamily:SF,fontSize:12,fontWeight:600,cursor:"pointer" }}>Confirmer</button>
-                          </div>
-                        ) : (
-                          <button onClick={()=>setConfirmSell(cubage.id)} style={{ padding:"7px 12px",borderRadius:8,border:"1px solid rgba(255,69,58,0.25)",background:"rgba(255,69,58,0.08)",color:"rgba(255,100,80,0.9)",fontFamily:SF,fontSize:12,cursor:"pointer",whiteSpace:"nowrap" }}>🪓 Vendu</button>
-                        )}
+                        <div style={{ textAlign:"right",flexShrink:0 }}>
+                          <div style={{ fontFamily:SF,fontSize:16,fontWeight:700,color:C.greenText }}>{fmt(cv,2)} m³</div>
+                          {confirmSell===cubage.id ? (
+                            <div style={{ display:"flex",gap:6,marginTop:6 }}>
+                              <button onClick={()=>setConfirmSell(null)} style={{ padding:"6px 10px",borderRadius:8,border:"none",background:"rgba(255,255,255,0.08)",color:C.label,fontFamily:SF,fontSize:12,cursor:"pointer" }}>Annuler</button>
+                              <button onClick={()=>markSold(cubage.id)} style={{ padding:"6px 12px",borderRadius:8,border:"none",background:"rgba(255,69,58,0.85)",color:"#fff",fontFamily:SF,fontSize:12,fontWeight:600,cursor:"pointer" }}>Oui, vendu</button>
+                            </div>
+                          ) : (
+                            <button onClick={()=>setConfirmSell(cubage.id)} style={{ marginTop:4,padding:"6px 12px",borderRadius:8,border:"1px solid rgba(255,69,58,0.25)",background:"rgba(255,69,58,0.08)",color:"rgba(255,100,80,0.85)",fontFamily:SF,fontSize:12,fontWeight:500,cursor:"pointer",whiteSpace:"nowrap" }}>🪓 Marquer vendu</button>
+                          )}
+                        </div>
                       </div>
                       {/* Parcel list with essence selector */}
                       {cubage.trees?.map((parcel,pi) => {
@@ -2284,7 +2418,7 @@ function PatrimoineScreen({ profile, onClose }) {
                               <div style={{ paddingBottom:12,animation:"fadeIn .2s ease" }}>
                                 <div style={{ fontFamily:SF,fontSize:11,color:C.label,marginBottom:8,letterSpacing:"0.05em" }}>Selectionner l'essence</div>
                                 <div style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:6 }}>
-                                  {ESSENCE_LIST.map(e=>(
+                                  {getEssenceList(country||"FR").map(e=>(
                                     <button key={e.id} onClick={()=>{setEssence(cubage.id,parcel.id||parcel.name,e.id);setPickingEssence(null);}} style={{
                                       display:"flex",alignItems:"center",gap:8,padding:"10px 12px",
                                       borderRadius:10,border:`1px solid ${ess.id===e.id?"rgba(50,215,75,0.5)":"rgba(255,255,255,0.07)"}`,
@@ -2329,8 +2463,153 @@ function PatrimoineScreen({ profile, onClose }) {
 
         {/* ── ONGLET PRIX DE MARCHÉ ── */}
         {activeTab === "marche" && (
-          <MarcheTab />
+          <MarcheTab country={country||profile?.country||"FR"} />
         )}
+
+      </div>
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════
+   SETTINGS SCREEN
+═══════════════════════════════════════ */
+function SettingsScreen({ profile, onSave, onReset, onClose }) {
+  const SF = "'SF Pro Display',-apple-system,sans-serif";
+  const [country, setCountry] = useState(profile?.country || "FR");
+  const [domain, setDomain] = useState(profile?.domain || "");
+  const [firstName, setFirstName] = useState(profile?.firstName || "");
+  const [lastName, setLastName] = useState(profile?.lastName || "");
+  const [photo, setPhoto] = useState(profile?.photo || null);
+  const COUNTRIES = [
+    { id:"FR", flag:"🇫🇷", label:"France" },
+    { id:"CA", flag:"🇨🇦", label:"Canada (QC)" },
+  ];
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const handlePhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhoto(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = () => {
+    const p = {
+      ...profile,
+      country: country || "FR",
+      domain: domain.trim() || "iForestier",
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      photo: photo || null,
+    };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch(e) {}
+    sb.upsert("profiles", {
+      device_id: getDeviceId(),
+      domain: p.domain,
+      first_name: p.firstName,
+      last_name: p.lastName,
+      has_photo: !!p.photo,
+      data_consent: p.dataConsent || false,
+      created_at: new Date().toISOString(),
+    }, "device_id");
+    onSave(p);
+  };
+
+  const IOSField = ({ label, value, onChange, placeholder, keyboard="text" }) => (
+    <div style={{ marginBottom:12 }}>
+      <div style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6 }}>{label}</div>
+      <div style={{ background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,overflow:"hidden" }}>
+        <input
+          type={keyboard} value={value} onChange={e=>onChange(e.target.value)}
+          placeholder={placeholder}
+          style={{ width:"100%",background:"transparent",border:"none",padding:"14px 16px",color:"#fff",fontFamily:SF,fontSize:16,outline:"none" }}
+        />
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:300,backgroundImage:`url(${BG})`,backgroundSize:"cover",backgroundPosition:"center",display:"flex",flexDirection:"column",alignItems:"center",overflowY:"auto",padding:"0 0 60px" }}>
+      <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.86)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",pointerEvents:"none",zIndex:0 }}/>
+      <div style={{ position:"relative",zIndex:1,width:"100%",maxWidth:430,padding:"0 20px" }}>
+
+        {/* Nav */}
+        <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"56px 0 20px" }}>
+          <button onClick={onClose} style={{ background:"none",border:"none",color:C.green,fontFamily:SF,fontSize:17,cursor:"pointer" }}>Annuler</button>
+          <div style={{ fontFamily:SF,fontSize:17,fontWeight:600,color:"#fff" }}>Mon profil</div>
+          <button onClick={handleSave} style={{ background:"none",border:"none",color:C.green,fontFamily:SF,fontSize:17,fontWeight:600,cursor:"pointer" }}>Enregistrer</button>
+        </div>
+
+        {/* Photo */}
+        <div style={{ display:"flex",flexDirection:"column",alignItems:"center",marginBottom:28 }}>
+          <div style={{ position:"relative",marginBottom:10 }}>
+            {photo
+              ? <img src={photo} alt="profil" style={{ width:88,height:88,borderRadius:"50%",objectFit:"cover",border:"3px solid rgba(50,215,75,0.5)" }}/>
+              : <div style={{ width:88,height:88,borderRadius:"50%",background:"rgba(50,215,75,0.12)",border:"2px solid rgba(50,215,75,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:36 }}>🌲</div>
+            }
+            <label style={{ position:"absolute",bottom:0,right:0,width:28,height:28,borderRadius:"50%",background:C.green,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14 }}>
+              📷
+              <input type="file" accept="image/*" onChange={handlePhoto} style={{ display:"none" }}/>
+            </label>
+          </div>
+          {photo && <button onClick={()=>setPhoto(null)} style={{ background:"none",border:"none",color:"rgba(255,100,80,0.7)",fontFamily:SF,fontSize:13,cursor:"pointer" }}>Supprimer la photo</button>}
+        </div>
+
+        {/* Fields */}
+        <div style={{ background:"rgba(28,28,30,0.88)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"16px",marginBottom:16,backdropFilter:"blur(16px)" }}>
+          <IOSField label="Domaine forestier" value={domain} onChange={setDomain} placeholder="ex : Forêt de la Brenne"/>
+          <IOSField label="Prénom" value={firstName} onChange={setFirstName} placeholder="Prénom"/>
+          <IOSField label="Nom" value={lastName} onChange={setLastName} placeholder="Nom" />
+          <div style={{ marginBottom:4 }}>
+            <div style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8 }}>Pays</div>
+            <div style={{ display:"flex",gap:8 }}>
+              {COUNTRIES.map(c=>(
+                <button key={c.id} onClick={()=>setCountry(c.id)} style={{
+                  flex:1,padding:"12px 8px",borderRadius:12,
+                  border:`1px solid ${country===c.id?"rgba(50,215,75,0.5)":"rgba(255,255,255,0.1)"}`,
+                  background:country===c.id?"rgba(50,215,75,0.1)":"rgba(255,255,255,0.04)",
+                  cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+                }}>
+                  <span style={{ fontSize:22 }}>{c.flag}</span>
+                  <span style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:country===c.id?C.green:"rgba(255,255,255,0.6)" }}>{c.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Save */}
+        <button onClick={handleSave} style={{
+          width:"100%",padding:"16px",borderRadius:14,border:"none",
+          background:C.green,color:"#000",
+          fontFamily:SF,fontSize:17,fontWeight:700,cursor:"pointer",
+          boxShadow:"0 4px 20px rgba(50,215,75,0.3)",marginBottom:12,
+        }}>Enregistrer les modifications</button>
+
+        {/* Danger zone */}
+        <div style={{ background:"rgba(28,28,30,0.7)",border:"1px solid rgba(255,69,58,0.15)",borderRadius:14,padding:"16px",marginTop:16 }}>
+          <div style={{ fontFamily:SF,fontSize:12,fontWeight:600,color:"rgba(255,69,58,0.6)",textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10 }}>Zone de réinitialisation</div>
+          {!confirmReset ? (
+            <button onClick={()=>setConfirmReset(true)} style={{
+              width:"100%",padding:"13px",borderRadius:12,border:"1px solid rgba(255,69,58,0.25)",
+              background:"rgba(255,69,58,0.07)",color:"rgba(255,100,80,0.85)",
+              fontFamily:SF,fontSize:15,cursor:"pointer",
+            }}>Réinitialiser le profil et les données</button>
+          ) : (
+            <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+              <div style={{ fontFamily:SF,fontSize:13,color:"rgba(255,255,255,0.55)",lineHeight:1.5,marginBottom:4 }}>
+                Cela effacera toutes vos mesures en cours. Vos cubages enregistrés restent disponibles dans Historique.
+              </div>
+              <div style={{ display:"flex",gap:8 }}>
+                <button onClick={()=>setConfirmReset(false)} style={{ flex:1,padding:"12px",borderRadius:10,border:"none",background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.6)",fontFamily:SF,fontSize:15,cursor:"pointer" }}>Annuler</button>
+                <button onClick={onReset} style={{ flex:2,padding:"12px",borderRadius:10,border:"none",background:"rgba(255,69,58,0.85)",color:"#fff",fontFamily:SF,fontSize:15,fontWeight:700,cursor:"pointer" }}>Réinitialiser</button>
+              </div>
+            </div>
+          )}
+        </div>
 
       </div>
     </div>
@@ -2352,6 +2631,7 @@ export default function App() {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showPatrimoine, setShowPatrimoine] = useState(false);
   const [showConsentGate, setShowConsentGate] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -2363,7 +2643,11 @@ export default function App() {
     })();
   }, []);
 
-  const saveProfile = (p) => setProfile(p);
+  const saveProfile = (p) => {
+    setProfile(p);
+    setTrees([]); // reset session on new profile
+    setPrice("");
+  };
   const createTree = () => setNaming(true);
   const confirmName = (name, essence, geo) => {
     const id = Date.now();
@@ -2413,34 +2697,37 @@ export default function App() {
         <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.58)",backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)",pointerEvents:"none",zIndex:0 }}/>
 
         {!profile && <WelcomeScreen onSave={saveProfile}/>}
-        {naming && <NamingScreen index={trees.length+1} onConfirm={confirmName} onCancel={()=>setNaming(false)}/>}
+        {naming && <NamingScreen index={trees.length+1} country={profile?.country||"FR"} onConfirm={confirmName} onCancel={()=>setNaming(false)}/>}
         {measuring&&measuringTree&&<MeasureScreen tree={measuringTree} price={price} onAdd={(d,l)=>addLog(measuring,d,l)} onBack={()=>setMeasuring(null)} onFinish={()=>setMeasuring(null)}/>}
         {showReport&&<ReportScreen trees={trees} price={price} setPrice={setPrice} profile={profile} onClose={()=>setShowReport(false)}/>}
         {showHistory&&<HistoryScreen profile={profile} onClose={()=>setShowHistory(false)}/>}
+        {showSettings&&<SettingsScreen profile={profile} onSave={(p)=>{setProfile(p);setShowSettings(false);}} onReset={()=>{setProfile(null);setTrees([]);setPrice("");setShowSettings(false);}} onClose={()=>setShowSettings(false)}/>}
         {showConsentGate&&<ConsentGateScreen onAccept={()=>{const p={...profile,dataConsent:true};try{localStorage.setItem(STORAGE_KEY,JSON.stringify(p));}catch(e){}setProfile(p);setShowConsentGate(false);setShowPatrimoine(true);}} onClose={()=>setShowConsentGate(false)}/>}
-        {showPatrimoine&&<PatrimoineScreen profile={profile} onClose={()=>setShowPatrimoine(false)}/>}
-        {showAnalysis&&<AnalysisScreen trees={trees} profile={profile} onClose={()=>setShowAnalysis(false)}/>}
+        {showPatrimoine&&<PatrimoineScreen profile={profile} country={profile?.country||"FR"} onClose={()=>setShowPatrimoine(false)}/>}
+        {showAnalysis&&<AnalysisScreen trees={trees} profile={profile} country={profile?.country||"FR"} onClose={()=>setShowAnalysis(false)}/>}
 
         <div style={{ position:"relative",zIndex:1,width:"100%",maxWidth:430,padding:"0 16px",display:"flex",flexDirection:"column",gap:0 }}>
           {/* Status bar spacer */}
           <div style={{ height:56 }}/>
 
           {/* Header */}
-          <div style={{ padding:"0 4px 8px" }}>
-            <div style={{ fontFamily:"'SF Pro Display',-apple-system,sans-serif",fontWeight:800,fontSize:"clamp(2rem,7vw,2.8rem)",color:"#fff",letterSpacing:"-0.03em",lineHeight:1 }}>
-              <span style={{ fontFamily:"-apple-system,'SF Pro Display','Helvetica Neue',sans-serif",fontWeight:600,fontStyle:"normal",color:C.green,fontSize:"1em",letterSpacing:"-0.01em" }}>i</span>{" "}Forestier
+          <div style={{ padding:"4px 4px 12px",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+            <div>
+              <div style={{ fontFamily:"'SF Pro Display',-apple-system,sans-serif",fontWeight:800,fontSize:"clamp(1.8rem,7vw,2.4rem)",color:"#fff",letterSpacing:"-0.03em",lineHeight:1 }}>
+                <span style={{ fontFamily:"-apple-system,'SF Pro Display','Helvetica Neue',sans-serif",fontWeight:600,fontStyle:"normal",color:C.green,fontSize:"1em",letterSpacing:"-0.01em" }}>i</span>{" "}Forestier
+              </div>
+              {profile&&(
+                <div style={{ fontFamily:"'SF Pro Display',-apple-system,sans-serif",fontSize:12,color:C.label,marginTop:3 }}>
+                  {profile.country==="CA"?"🇨🇦 ":"🇫🇷 "}{profile.domain}{profile.firstName?" · "+profile.firstName:""}
+                </div>
+              )}
             </div>
             {profile&&(
-              <div style={{ display:"flex",alignItems:"center",gap:10,marginTop:6 }}>
-                {profile.photo
-                  ? <img src={profile.photo} alt="profil" style={{ width:36,height:36,borderRadius:"50%",objectFit:"cover",border:"2px solid rgba(50,215,75,0.5)",flexShrink:0 }}/>
-                  : <div style={{ width:36,height:36,borderRadius:"50%",background:"rgba(50,215,75,0.15)",border:"1px solid rgba(50,215,75,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0 }}>🌲</div>
-                }
-                <div>
-                  <div style={{ fontFamily:"'SF Pro Display',-apple-system,sans-serif",fontSize:14,fontWeight:600,color:"rgba(255,255,255,0.85)" }}>{profile.firstName} {profile.lastName}</div>
-                  <div style={{ fontFamily:"'SF Pro Display',-apple-system,sans-serif",fontSize:12,color:C.label,marginTop:1 }}>{profile.domain}</div>
-                </div>
-              </div>
+              <button onClick={()=>setShowSettings(true)} style={{
+                width:38,height:38,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.12)",
+                background:"rgba(255,255,255,0.06)",cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,
+              }}>⚙️</button>
             )}
           </div>
 
@@ -2538,19 +2825,7 @@ forestier</span>
             )}
           </div>
 
-          {profile&&(
-            <button onClick={()=>setProfile(null)} style={{
-              display:"flex",alignItems:"center",gap:8,
-              alignSelf:"center",
-              background:"rgba(255,255,255,0.07)",
-              border:"1px solid rgba(255,255,255,0.15)",
-              borderRadius:10,padding:"9px 18px",
-              cursor:"pointer",marginTop:16,
-            }}>
-              <span style={{ fontSize:15 }}>⚙️</span>
-              <span style={{ fontFamily:"'SF Pro Display',-apple-system,sans-serif",fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.65)" }}>Modifier le profil</span>
-            </button>
-          )}
+
         </div>
       </div>
     </div>
