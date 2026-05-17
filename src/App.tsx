@@ -458,6 +458,164 @@ function WelcomeScreen({ onSave }) {
   );
 }
 
+/* ═══════════════════════════════════════
+   GEO BLOCK — GPS auto + saisie manuelle
+═══════════════════════════════════════ */
+function GeoBlock({ geo, setGeo, geoStatus, SF }) {
+  const [mode, setMode] = useState("auto"); // "auto" | "manual"
+  const [manualLat, setManualLat] = useState(geo?.lat ? String(geo.lat) : "");
+  const [manualLng, setManualLng] = useState(geo?.lng ? String(geo.lng) : "");
+  const [parseError, setParseError] = useState("");
+
+  const applyManual = () => {
+    const lat = parseFloat(manualLat.replace(",","."));
+    const lng = parseFloat(manualLng.replace(",","."));
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      setParseError("Coordonnées invalides — ex: 47.123456, 2.654321");
+      return;
+    }
+    setParseError("");
+    setGeo({ lat: +lat.toFixed(6), lng: +lng.toFixed(6), accuracy: null, manual: true });
+  };
+
+  const tryPasteCoords = (val) => {
+    // Parse "lat, lng" or "lat lng" pasted at once
+    const parts = val.split(/[,; \t]+/).map(v=>v.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      const lat = parseFloat(parts[0].replace(",","."));
+      const lng = parseFloat(parts[1].replace(",","."));
+      if (!isNaN(lat) && !isNaN(lng)) {
+        setManualLat(lat.toFixed(6));
+        setManualLng(lng.toFixed(6));
+        setParseError("");
+        setGeo({ lat: +lat.toFixed(6), lng: +lng.toFixed(6), accuracy: null, manual: true });
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const openGoogleMaps = () => {
+    window.open("https://maps.google.com", "_blank");
+  };
+
+  return (
+    <div style={{ background:"rgba(28,28,30,0.85)",border:`1px solid ${geo?.manual?"rgba(100,180,255,0.3)":geoStatus==="ok"?"rgba(50,215,75,0.25)":"rgba(255,255,255,0.08)"}`,borderRadius:14,overflow:"hidden",backdropFilter:"blur(16px)" }}>
+
+      {/* Mode toggle */}
+      <div style={{ display:"flex",borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
+        {[{id:"auto",label:"📍 GPS auto"},{id:"manual",label:"✏️ Saisie manuelle"}].map(m=>(
+          <button key={m.id} onClick={()=>setMode(m.id)} style={{
+            flex:1,padding:"10px",border:"none",
+            background:mode===m.id?"rgba(255,255,255,0.08)":"transparent",
+            color:mode===m.id?"#fff":C.label,
+            fontFamily:SF,fontSize:13,fontWeight:mode===m.id?600:400,
+            cursor:"pointer",transition:"all .15s",
+          }}>{m.label}</button>
+        ))}
+      </div>
+
+      {/* AUTO mode */}
+      {mode==="auto"&&(
+        <div style={{ display:"flex",alignItems:"center",gap:10,padding:"12px 14px" }}>
+          <span style={{ fontSize:18 }}>{geoStatus==="ok"?"📍":geoStatus==="loading"?"🔄":"📵"}</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:SF,fontSize:13,fontWeight:500,color:geoStatus==="ok"?C.green:"rgba(255,255,255,0.5)" }}>
+              {geoStatus==="ok"?"Position GPS capturée":geoStatus==="loading"?"Localisation en cours...":"GPS non autorisé"}
+            </div>
+            {geoStatus==="ok"&&geo&&(
+              <div style={{ fontFamily:SF,fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2 }}>
+                {geo.lat}, {geo.lng} · ±{geo.accuracy}m
+              </div>
+            )}
+            {geoStatus==="error"&&(
+              <div style={{ fontFamily:SF,fontSize:11,color:"rgba(255,255,255,0.28)",marginTop:2,lineHeight:1.4 }}>
+                {"Pas de GPS ? Passez en saisie manuelle →"}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MANUAL mode */}
+      {mode==="manual"&&(
+        <div style={{ padding:"14px" }}>
+          <div style={{ fontFamily:SF,fontSize:12,color:C.label,marginBottom:10,lineHeight:1.5 }}>
+            Entrez les coordonnées GPS de votre parcelle.
+            <span onClick={openGoogleMaps} style={{ color:"rgba(100,180,255,0.8)",cursor:"pointer",marginLeft:6,textDecoration:"underline" }}>
+              Trouver sur Google Maps →
+            </span>
+          </div>
+
+          {/* Paste zone — paste "lat, lng" in one go */}
+          <div style={{ marginBottom:10 }}>
+            <div style={{ fontFamily:SF,fontSize:11,fontWeight:600,color:C.label,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6 }}>
+              Coller les coordonnées (lat, lng)
+            </div>
+            <div style={{ background:"rgba(0,0,0,0.3)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,overflow:"hidden" }}>
+              <input
+                type="text"
+                placeholder="ex : 47.123456, 2.654321"
+                onChange={e=>tryPasteCoords(e.target.value)}
+                style={{ width:"100%",background:"transparent",border:"none",padding:"12px 14px",color:"#fff",fontFamily:SF,fontSize:15,outline:"none" }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:10 }}>
+            <div style={{ flex:1,height:1,background:"rgba(255,255,255,0.08)" }}/>
+            <div style={{ fontFamily:SF,fontSize:11,color:C.label }}>ou saisir séparément</div>
+            <div style={{ flex:1,height:1,background:"rgba(255,255,255,0.08)" }}/>
+          </div>
+
+          {/* Lat / Lng fields */}
+          <div style={{ display:"flex",gap:8,marginBottom:10 }}>
+            {[
+              {label:"Latitude",val:manualLat,set:setManualLat,ph:"ex: 47.123456"},
+              {label:"Longitude",val:manualLng,set:setManualLng,ph:"ex: 2.654321"},
+            ].map(f=>(
+              <div key={f.label} style={{ flex:1 }}>
+                <div style={{ fontFamily:SF,fontSize:11,fontWeight:600,color:C.label,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4 }}>{f.label}</div>
+                <div style={{ background:"rgba(0,0,0,0.3)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10 }}>
+                  <input type="text" value={f.val} onChange={e=>f.set(e.target.value)}
+                    placeholder={f.ph}
+                    style={{ width:"100%",background:"transparent",border:"none",padding:"10px 12px",color:"#fff",fontFamily:SF,fontSize:14,outline:"none",textAlign:"center" }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {parseError&&<div style={{ fontFamily:SF,fontSize:12,color:"rgba(255,100,80,0.8)",marginBottom:8 }}>{parseError}</div>}
+
+          {geo?.manual&&(
+            <div style={{ display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"rgba(100,180,255,0.08)",border:"1px solid rgba(100,180,255,0.2)",borderRadius:10,marginBottom:8 }}>
+              <span style={{ fontSize:16 }}>📌</span>
+              <div style={{ fontFamily:SF,fontSize:12,color:"rgba(100,180,255,0.9)" }}>
+                Position manuelle : {geo.lat}, {geo.lng}
+              </div>
+              <button onClick={()=>{setGeo(null);setManualLat("");setManualLng("");}} style={{ marginLeft:"auto",background:"none",border:"none",color:"rgba(255,255,255,0.35)",cursor:"pointer",fontSize:16 }}>✕</button>
+            </div>
+          )}
+
+          <button onClick={applyManual} disabled={!manualLat||!manualLng} style={{
+            width:"100%",padding:"12px",borderRadius:10,border:"none",
+            background:manualLat&&manualLng?"rgba(100,180,255,0.85)":"rgba(255,255,255,0.07)",
+            color:manualLat&&manualLng?"#000":"rgba(255,255,255,0.3)",
+            fontFamily:SF,fontSize:15,fontWeight:600,
+            cursor:manualLat&&manualLng?"pointer":"default",
+          }}>Valider la position</button>
+
+          <div style={{ fontFamily:SF,fontSize:11,color:"rgba(255,255,255,0.2)",marginTop:8,lineHeight:1.5,textAlign:"center" }}>
+            Sur Google Maps : maintenez appuyé sur la carte → les coordonnées apparaissent en bas
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function NamingScreen({ index, country, onConfirm, onCancel }) {
   const [name, setName] = useState("");
   const essences = getEssenceList(country||"FR");
@@ -510,32 +668,8 @@ function NamingScreen({ index, country, onConfirm, onCancel }) {
             ))}
           </div>
         </div>
-        {/* Geo indicator */}
-        <div style={{
-          display:"flex",alignItems:"center",gap:10,
-          padding:"11px 14px",borderRadius:12,
-          background: geoStatus==="ok" ? "rgba(50,215,75,0.08)" : geoStatus==="loading" ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.04)",
-          border: geoStatus==="ok" ? "1px solid rgba(50,215,75,0.25)" : "1px solid rgba(255,255,255,0.08)",
-        }}>
-          <span style={{ fontSize:18 }}>
-            {geoStatus==="ok" ? "📍" : geoStatus==="loading" ? "🔄" : "📵"}
-          </span>
-          <div style={{ flex:1 }}>
-            <div style={{ fontFamily:SF,fontSize:13,fontWeight:500,color:geoStatus==="ok"?C.green:"rgba(255,255,255,0.5)" }}>
-              {geoStatus==="ok" ? "Position GPS capturée" : geoStatus==="loading" ? "Localisation en cours..." : "GPS non autorisé"}
-            </div>
-            {geoStatus==="ok" && geo && (
-              <div style={{ fontFamily:SF,fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2 }}>
-                {geo.lat}, {geo.lng} · ±{geo.accuracy}m
-              </div>
-            )}
-            {geoStatus==="error" && (
-              <div style={{ fontFamily:SF,fontSize:11,color:"rgba(255,255,255,0.28)",marginTop:2,lineHeight:1.4 }}>
-                Autorisez la localisation dans votre navigateur — la parcelle sera quand meme creee.
-              </div>
-            )}
-          </div>
-        </div>
+        {/* Geo block */}
+        <GeoBlock geo={geo} setGeo={setGeo} geoStatus={geoStatus} SF={SF}/>
 
         <div style={{ display:"flex",gap:10,marginTop:4 }}>
           <button onClick={onCancel} style={{ flex:1,padding:"15px",borderRadius:14,border:"none",background:"rgba(255,255,255,0.1)",color:"#fff",fontFamily:SF,fontSize:17,cursor:"pointer" }}>Annuler</button>
