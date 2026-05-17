@@ -1248,35 +1248,7 @@ function ReportScreen({ trees, price, setPrice, profile, onClose }) {
 // Taux en cm/an de diamètre (valeurs médianes station favorable)
 // Régions sylvicoles françaises basées sur découpage CNPF / IFN
 
-const REGIONS = [
-  { id:"nord_ouest",   label:"Normandie / Bretagne",       icon:"🌧",
-    note:"Sol profond, pluviosité élevée — excellent pour feuillus",
-    coeff:{ chene:1.10, hetre:1.15, pin:0.85, douglas:1.20, epicea:0.90, peuplier:1.40, meleze:0.80, chataignier:1.10 } },
-  { id:"idf_centre",   label:"Île-de-France / Centre",     icon:"🌾",
-    note:"Plaine argilo-calcaire — bon équilibre feuillus/résineux",
-    coeff:{ chene:1.00, hetre:1.00, pin:1.00, douglas:1.00, epicea:0.95, peuplier:1.10, meleze:0.85, chataignier:0.95 } },
-  { id:"nord_est",     label:"Alsace / Lorraine / Vosges", icon:"⛰",
-    note:"Sols vosgiens, influence continentale — résineux favorisés",
-    coeff:{ chene:0.90, hetre:1.05, pin:1.10, douglas:1.05, epicea:1.25, peuplier:0.85, meleze:1.10, chataignier:0.80 } },
-  { id:"sud_ouest",    label:"Aquitaine / Landes",         icon:"🌲",
-    note:"Sables landais, douceur atlantique — pin maritime & douglas excellents",
-    coeff:{ chene:0.95, hetre:0.85, pin:1.40, douglas:1.35, epicea:0.75, peuplier:1.20, meleze:0.70, chataignier:1.05 } },
-  { id:"massif_central",label:"Massif Central / Auvergne", icon:"🏔",
-    note:"Altitude 600-1200m, sols volcaniques — douglas très productif",
-    coeff:{ chene:0.85, hetre:0.95, pin:1.05, douglas:1.30, epicea:1.10, peuplier:0.70, meleze:0.95, chataignier:0.90 } },
-  { id:"alpes_jura",   label:"Alpes / Jura / Franche-Comté",icon:"🗻",
-    note:"Sols calcaires à altitude, rigueur climatique — croissance ralentie mais bois dense",
-    coeff:{ chene:0.80, hetre:0.90, pin:0.95, douglas:1.10, epicea:1.05, peuplier:0.65, meleze:1.20, chataignier:0.70 } },
-  { id:"bourgogne",    label:"Bourgogne / Morvan",         icon:"🍷",
-    note:"Forêts mixtes, sols argilo-calcaires — chêne de qualité exceptionnelle",
-    coeff:{ chene:1.05, hetre:1.00, pin:0.90, douglas:1.15, epicea:0.90, peuplier:1.00, meleze:0.85, chataignier:1.00 } },
-  { id:"mediterranee", label:"Méditerranée / PACA",        icon:"☀️",
-    note:"Sécheresse estivale — croissance limitée, bois dense et résistant",
-    coeff:{ chene:0.70, hetre:0.75, pin:0.85, douglas:0.80, epicea:0.65, peuplier:0.90, meleze:0.85, chataignier:0.85 } },
-  { id:"pyrenees",     label:"Pyrénées / Occitanie",       icon:"🏕",
-    note:"Gradient altitudinal, façade atlantique — hêtre dominant",
-    coeff:{ chene:0.90, hetre:1.10, pin:1.05, douglas:1.10, epicea:0.95, peuplier:0.95, meleze:0.95, chataignier:1.00 } },
-];
+
 
 // Base species data (valeurs de référence IFN, station moyenne)
 // Sources : CNPF fiches essences 2019-2023, ONF guide des sylvicultures
